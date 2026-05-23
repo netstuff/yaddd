@@ -1,8 +1,9 @@
 """Base value object."""
 
 import copy
-from abc import ABC, ABCMeta, abstractmethod
-from typing import Any, Final, Generic, Self, TypeVar
+from abc import ABCMeta, abstractmethod
+from typing import Any, Generic, Self, TypeVar
+
 
 ValidatedValue = TypeVar("ValidatedValue")
 

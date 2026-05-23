@@ -1,14 +1,15 @@
 """Connectors to external data sources."""
 
 from abc import ABC
-from typing import Final
+from typing import Any, Final, Protocol
 
 from yaddd.settings.http import HttpConnectorSettings
 
 
-class ConnectorBase(ABC):
+class ConnectorBase(Protocol):
     """Data connector base."""
-    ...
+
+    session: Any
 
 
 class HttpConnector(ConnectorBase, ABC):

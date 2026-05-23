@@ -7,6 +7,7 @@ from sqlalchemy.sql.type_api import TypeEngine
 
 from ..base import ValueObject
 
+
 _PythonValueT = TypeVar("_PythonValueT")
 _StorableValueT = TypeVar("_StorableValueT")
 

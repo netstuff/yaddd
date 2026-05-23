@@ -3,11 +3,11 @@ import typing
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from time import struct_time
-
 from typing import Never, Self, overload
 
 from .base import ValueObject
 from .registry import VOBaseTypesRegistry
+
 
 AnyNumeric = typing.TypeVar("AnyNumeric", int, float, Decimal)
 

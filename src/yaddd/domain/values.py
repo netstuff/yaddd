@@ -1,5 +1,7 @@
 """Common domain Value-Objects."""
 
-UUID = NewType("UUID", uuid.UUID)
+from typing import TypeVar
+from uuid import UUID
+
 
 PrimaryKey = TypeVar("PrimaryKey", UUID, int, str)

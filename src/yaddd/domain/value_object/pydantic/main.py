@@ -12,6 +12,7 @@ from typing_extensions import Self, assert_never
 from ..base import ValidatedValue, ValueObject
 from ..registry import VOBaseTypesRegistry
 
+
 _PydanticType: TypeAlias = type[ValidatedValue] | Annotated  # type: ignore[valid-type]
 
 

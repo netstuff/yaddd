@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from ..base import ValueObject
 
+
 vo_compatible_encoder: Callable[[ValueObject[Any]], Any] = operator.attrgetter("_validated_value")
 
 

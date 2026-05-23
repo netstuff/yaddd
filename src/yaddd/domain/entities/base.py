@@ -1,28 +1,26 @@
 """Domain entites base."""
-from abc import ABC
+from abc import ABC, ABCMeta
 from dataclasses import dataclass
 from typing import Any, Callable, Final, Sequence
 
 from yaddd.domain.values import PrimaryKey
 
 
-class EntityMeta:
+class EntityMeta(ABCMeta):
     """Meta-class for domain entities."""
 
     DC_PARAMS: Final[dict[str, bool]] = dict(eq=False, kw_only=True, repr=False)
 
-    def __new__(cls, name, bases, dct):
+    def __new__(mcs, name, bases, namespace, **kwargs):
         """Convert class to a dataclass."""
-        cls = type.__new__(cls, name, bases, dct)
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls._invariants: set[Callable] = set()
 
-        return dataclass(**cls.DC_PARAMS)(cls)
+        return dataclass(**mcs.DC_PARAMS)(cls)
 
 
 class AggregateMeta(EntityMeta):
     """Meta-class for domain aggreagate roots."""
-
-    DC_PARAMS: Final[dict[str, bool]] = EntityMeta.DC_PARAMS + {"frozen": True}
 
 
 class EntityBase(ABC):

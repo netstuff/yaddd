@@ -7,7 +7,8 @@ Read more at: https://martinfowler.com/apsupp/spec.pdf
 """
 import abc
 from abc import ABC
-from typing import Generic, TypeVar, Self
+from typing import Generic, Self, TypeVar
+
 
 Candidate = TypeVar("Candidate")
 
