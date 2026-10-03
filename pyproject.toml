@@ -119,6 +119,7 @@ typeCheckingMode = "strict"
 
 [tool.uv]
 package = true
+default-groups = ["all"]
 
 
 [tool.poetry.dependencies]

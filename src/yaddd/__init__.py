@@ -4,16 +4,21 @@ Framework-agnostic building blocks for layered DDD applications:
 domain, application, infrastructure and presentation (entrypoints).
 """
 
-from yaddd.domain.value_object import (
+from yaddd.domain import (
+    AggregateRoot,
     AnyStrValueObject,
+    BusinessRule,
     BytesValueObject,
     DatetimeValueObject,
     DateValueObject,
     DecimalValueObject,
     DictValueObject,
+    DomainEvent,
+    Entity,
     FloatValueObject,
     IntValueObject,
     NumericValueObject,
+    PrimaryKey,
     SensitiveValueObject,
     StringValueObject,
     ValueObject,
@@ -36,8 +41,10 @@ from yaddd.shared.specification import Specification
 
 
 __all__ = [
+    "AggregateRoot",
     "AnyStrValueObject",
     "ApplicationError",
+    "BusinessRule",
     "BusinessRuleViolationError",
     "BytesValueObject",
     "ConnectorError",
@@ -46,6 +53,8 @@ __all__ = [
     "DecimalValueObject",
     "DictValueObject",
     "DomainError",
+    "DomainEvent",
+    "Entity",
     "EntityNotFoundError",
     "FloatValueObject",
     "HandlerNotFoundError",
@@ -53,6 +62,7 @@ __all__ = [
     "IntValueObject",
     "InvariantViolationError",
     "NumericValueObject",
+    "PrimaryKey",
     "SensitiveValueAccessError",
     "SensitiveValueObject",
     "Specification",

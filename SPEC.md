@@ -142,37 +142,49 @@ class SensitiveValueObject[V](ValueObject[V]):
   значение (`ClassName([MASKED])`), `str` бросает
   `SensitiveValueAccessError` — защита от утечки в логи; маскирование
   наследуется подклассами;
-- копирование (`copy`/`deepcopy`) возвращает VO того же класса;
-- `PrimaryKey = TypeVar("PrimaryKey", UUID, int, str)` — ограниченный тип
-  идентификатора сущностей.
+- копирование (`copy`/`deepcopy`) возвращает VO того же класса.
 
 ### 6.2 Entity
 
-Назначение: объект с идентичностью. Реализуется dataclass'ом
-(`eq=False, kw_only=True, repr=False`).
+Назначение: объект с идентичностью. Подклассы автоматически становятся
+dataclass'ами (`eq=False, kw_only=True`) через `__init_subclass__` +
+`@dataclass_transform` (PEP 681) — без метаклассов, с пониманием
+синтезированного `__init__` type checker'ами.
 
 ```python
-class Entity(ABC):
-    PRIMARY_KEY_NAME: Final[str] = "id"
+class Entity:
+    PRIMARY_KEY_NAME: ClassVar[str] = "id"
+    INVARIANTS: ClassVar[tuple[BusinessRule[Any], ...]] = ()
     @property
-    def pk(self) -> PrimaryKey: ...
+    def pk(self) -> PrimaryKey: ...  # type PrimaryKey = UUID | int | str
 ```
 
 - равенство и хеш — по `pk` внутри одного класса;
-- `to_dict() -> dict[str, Any]` — сериализация полей.
+- `to_dict() -> dict[str, Any]` — сериализация полей;
+- `INVARIANTS` на уровне сущности — правила **самосогласованности**
+  («количество > 0», «конец периода ≥ начала»); проверяются в
+  `__post_init__`, нарушение — `InvariantViolationError`;
+- инварианты, охватывающие несколько сущностей, размещаются на корне
+  агрегата — размещение правила документирует его область действия;
+- пользователь объявляет поля аннотациями, декоратор не нужен; если класс
+  уже задекорирован `@dataclass` вручную, автоматика уступает (для identity-
+  семантики вручную декорировать только с `eq=False`);
+- при переопределении `__post_init__` в подклассе обязателен вызов
+  `super().__post_init__()` (проверка инвариантов).
 
 ### 6.3 AggregateRoot
 
 ```python
 class AggregateRoot(Entity):
-    INVARIANTS: ClassVar[Sequence[BusinessRule]] = ()
     def add_event(self, event: DomainEvent) -> None: ...
     def pull_events(self) -> list[DomainEvent]: ...  # забирает и очищает
 ```
 
-- инварианты проверяются при конструировании (`__post_init__`) и после
-  каждой доменной мутации через `check_invariants()`; нарушение —
-  `InvariantViolationError`;
+- наследует механизм инвариантов от `Entity`; на корне размещаются
+  инварианты **уровня агрегата** — правила, охватывающие несколько сущностей;
+- `INVARIANTS: ClassVar[tuple[BusinessRule[Any], ...]]` — единственный
+  механизм инвариантов; экспериментальные декораторы `invariants` из
+  прототипа отброшены;
 - агрегат накапливает доменные события; репозиторий/шина забирает их через
   `pull_events()` после успешного сохранения;
 - все изменения состояния внутри агрегата идут только через корень —
@@ -188,7 +200,10 @@ class DomainEvent:
 ```
 
 - иммутабельное событие о свершившемся факте; имя события — имя класса;
-- пользователь наследует и добавляет полезную нагрузку;
+- `occurred_at` заполняется автоматически (`datetime.now(UTC)`);
+- подклассы автоматически становятся frozen-dataclass'ами через
+  `__init_subclass__` + `@dataclass_transform` — пользователь только
+  объявляет полезную нагрузку аннотациями;
 - версионирование: v0.1 события живут только внутри процесса (in-memory
   публикация), поле версии не вводится. Принцип на будущее: событие,
   покидающее процесс (outbox, брокер), обязано версионироваться
