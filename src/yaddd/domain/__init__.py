@@ -2,6 +2,7 @@
 
 from yaddd.domain.entities import AggregateRoot, Entity, PrimaryKey
 from yaddd.domain.events import DomainEvent
+from yaddd.domain.repositories import CrudRepository, Repository
 from yaddd.domain.rules import BusinessRule
 from yaddd.domain.value_object import (
     AnyStrValueObject,
@@ -25,6 +26,7 @@ __all__ = [
     "AnyStrValueObject",
     "BusinessRule",
     "BytesValueObject",
+    "CrudRepository",
     "DatetimeValueObject",
     "DateValueObject",
     "DecimalValueObject",
@@ -35,6 +37,7 @@ __all__ = [
     "IntValueObject",
     "NumericValueObject",
     "PrimaryKey",
+    "Repository",
     "SensitiveValueObject",
     "StringValueObject",
     "VOBaseTypesRegistry",

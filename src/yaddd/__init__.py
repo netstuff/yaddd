@@ -22,6 +22,7 @@ from yaddd.domain import (
     AnyStrValueObject,
     BusinessRule,
     BytesValueObject,
+    CrudRepository,
     DatetimeValueObject,
     DateValueObject,
     DecimalValueObject,
@@ -32,6 +33,7 @@ from yaddd.domain import (
     IntValueObject,
     NumericValueObject,
     PrimaryKey,
+    Repository,
     SensitiveValueObject,
     StringValueObject,
     ValueObject,
@@ -50,6 +52,12 @@ from yaddd.exceptions import (
     ValidationError,
     YadddError,
 )
+from yaddd.infrastructure import (
+    Connector,
+    InMemoryCrudRepository,
+    ReadModel,
+    ReadModelRepository,
+)
 from yaddd.shared.specification import Specification
 
 
@@ -63,7 +71,9 @@ __all__ = [
     "BytesValueObject",
     "Command",
     "CommandHandler",
+    "Connector",
     "ConnectorError",
+    "CrudRepository",
     "DTO",
     "DatetimeValueObject",
     "DateValueObject",
@@ -77,6 +87,7 @@ __all__ = [
     "EventPublisher",
     "FloatValueObject",
     "HandlerNotFoundError",
+    "InMemoryCrudRepository",
     "InMemoryEventPublisher",
     "InfrastructureError",
     "IntValueObject",
@@ -86,6 +97,9 @@ __all__ = [
     "PrimaryKey",
     "Query",
     "QueryHandler",
+    "ReadModel",
+    "ReadModelRepository",
+    "Repository",
     "SensitiveValueAccessError",
     "SensitiveValueObject",
     "Specification",

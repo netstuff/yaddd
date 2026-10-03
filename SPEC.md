@@ -101,8 +101,8 @@ src/yaddd/
 │   └── mappers.py         # Mapper (Protocol)
 ├── infrastructure/
 │   ├── __init__.py
-│   ├── repositories.py    # базовые реализации портов
-│   ├── read_models.py     # ReadModel, ReadModelRepository
+│   ├── repositories.py    # InMemoryCrudRepository, ReadModelRepository
+│   ├── read_models.py     # ReadModel
 │   └── connectors.py      # Connector (Protocol)
 └── presentation/
     ├── __init__.py
@@ -387,13 +387,16 @@ class Mapper[D, T: AggregateRoot](Protocol):
 
 ### 8.1 Реализации репозиториев
 
-- `Repository` (ABC): хранит `Connector`, предоставляет `conn`;
-- `CrudRepository[T]` (ABC): абстрактная async-реализация порта из §6.9;
-- `SqlRepository[T]`: база над SQLAlchemy `AsyncSession` (extra `sqlalchemy`,
-  ленивый импорт);
-- `HttpRepository[T]`: база для репозиториев поверх внешних HTTP-сервисов.
+- `InMemoryCrudRepository[T]` — dict-backed реализация порта `CrudRepository`
+  (§6.9) в ядре: для тестов, прототипов и простых приложений; `create`
+  вставляет или заменяет, `update` требует существования записи
+  (`EntityNotFoundError`), `delete` идемпотентен.
+- Отложено до extras: `SqlRepository[T]` над SQLAlchemy `AsyncSession`,
+  `HttpRepository[T]` поверх внешних HTTP-сервисов, connector-based ABC
+  (база, хранящая `Connector`) — появятся вместе с первым реальным
+  потребителем, чтобы не плодить мёртвый код.
 
-Каждый репозиторий работает ровно с одним агрегатом и одним коннектором.
+Каждый репозиторий работает ровно с одним агрегатом.
 Репозитории не управляют транзакцией: коммит/откат — ответственность
 `UnitOfWork` (§7.4), поверх сессии которого создаётся репозиторий.
 Репозитории не публикуют доменные события — это делает
@@ -401,7 +404,7 @@ class Mapper[D, T: AggregateRoot](Protocol):
 
 ### 8.2 UnitOfWork implementations
 
-- `SqlUnitOfWork` (extra `sqlalchemy`): оборачивает `AsyncSession`;
+- Отложено до extra `sqlalchemy`: `SqlUnitOfWork` поверх `AsyncSession`;
   `commit()` → `session.commit()`, `rollback()`/`__aexit__` при исключении →
   `session.rollback()`;
 - ядро реализаций не содержит — только Protocol из §7.4.
@@ -409,16 +412,19 @@ class Mapper[D, T: AggregateRoot](Protocol):
 ### 8.3 ReadModel
 
 ```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ReadModel: ...
+class ReadModel(FrozenDataclassMixin): ...
 
 class ReadModelRepository[M: ReadModel](Protocol):
-    async def find(self, filter: dict | None = None, *, slice: tuple[int, int] = (0, 0)) -> list[M]: ...
+    async def find(self, filter: dict[str, Any] | None = None, *, slice: tuple[int, int] = (0, 0)) -> list[M]: ...
     async def find_one(self, pk: PrimaryKey) -> M | None: ...
 ```
 
 - денормализованная модель «на чтение», оптимизированная под запросы;
-- read models не проходят через агрегаты и не навлекают доменных инвариантов.
+- read models не проходят через агрегаты и не навлекают доменных инвариантов;
+- подклассы автоматически становятся frozen-dataclass'ами;
+- порт `ReadModelRepository` живёт в `infrastructure/repositories.py` — рядом
+  с другими репозиториями слоя (по аналогии с портами агрегатов в
+  `domain/repositories.py`).
 
 ### 8.4 Connector
 
@@ -558,8 +564,8 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
 
 | Термин | Определение | В yaddd |
 |--------|-------------|---------|
-| Repository implementation | Реализация порта репозитория под конкретное хранилище | `CrudRepository`, `SqlRepository`, `HttpRepository` |
-| Unit of Work implementation | Реализация порта UoW поверх конкретной сессии/клиента | `SqlUnitOfWork` (extra `sqlalchemy`) |
+| Repository implementation | Реализация порта репозитория под конкретное хранилище | `InMemoryCrudRepository` (ядро); `SqlRepository`, `HttpRepository` — отложенные extras |
+| Unit of Work implementation | Реализация порта UoW поверх конкретной сессии/клиента | `SqlUnitOfWork` (отложенный extra `sqlalchemy`) |
 | Read Model (модель чтения) | Денормализованная проекция, оптимизированная под запросы; минует агрегаты | `ReadModel`, `infrastructure/read_models.py` |
 | Read Model Repository | Доступ «только чтение» к read models | `ReadModelRepository[M]` (Protocol) |
 | Connector (коннектор) | Абстракция над источником данных: БД-сессия, HTTP-клиент | `Connector` (Protocol), `HttpConnector` |
