@@ -1,6 +1,7 @@
-"""Domain layer: value objects, entities, aggregates, events, services, rules, ports."""
+"""Value objects: validate-on-init domain values."""
 
-from yaddd.domain.value_object import (
+from yaddd.domain.value_object.base import SensitiveValueObject, ValueObject
+from yaddd.domain.value_object.base_types import (
     AnyStrValueObject,
     BytesValueObject,
     DatetimeValueObject,
@@ -10,11 +11,9 @@ from yaddd.domain.value_object import (
     FloatValueObject,
     IntValueObject,
     NumericValueObject,
-    SensitiveValueObject,
     StringValueObject,
-    ValueObject,
-    VOBaseTypesRegistry,
 )
+from yaddd.domain.value_object.registry import VOBaseTypesRegistry
 
 
 __all__ = [

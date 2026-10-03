@@ -29,10 +29,6 @@ Homepage = 'https://github.com/pyDDD/yaddd'
 sqlalchemy = [
     "sqlalchemy>=2.0.37",
 ]
-pydantic = [
-    "pydantic[email]>=2.10.6",
-    "pydantic-settings>=2.7.1",
-]
 
 [dependency-groups]
 dev = [
@@ -122,14 +118,7 @@ pythonVersion = "3.12"
 typeCheckingMode = "strict"
 
 [tool.uv]
-package-mode = true
-packages = [{include = "src/yaddd"}]
-readme = "README.md"
-# Deprecated attrs (only for backward compatibility)
-authors = []
-name = "yaddd"
-version = "0.1.0"
-description = "Yet another DDD for Python"
+package = true
 
 
 [tool.poetry.dependencies]
@@ -138,8 +127,6 @@ python = "~3.12"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
-pydantic = {version="^2.10.6", extras=["email"]}
-pydantic-settings = "^2.7.1"
 
 
 [build-system]

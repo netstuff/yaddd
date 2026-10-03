@@ -77,7 +77,12 @@ src/yaddd/
 │   └── specification.py   # Specification + комбинаторы
 ├── domain/
 │   ├── __init__.py
-│   ├── values.py          # ValueObject, PrimaryKey, общие VO
+│   ├── value_object/
+│   │   ├── __init__.py      # публичный реэкспорт VO + __all__
+│   │   ├── base.py          # ValueObject, SensitiveValueObject
+│   │   ├── base_types.py    # Numeric/AnyStr/AnyDate/Dict и конкретные VO-базы
+│   │   ├── registry.py      # VOBaseTypesRegistry
+│   │   └── (sqlalchemy/, pydantic/ — отложенные extras, см. §11)
 │   ├── entities.py        # Entity, AggregateRoot
 │   ├── events.py          # DomainEvent
 │   ├── services.py        # DomainService
@@ -117,21 +122,26 @@ src/yaddd/
 После конструирования значение считается доверенным (parse, don't validate).
 
 ```python
-class ValueObject[V](metaclass=_ValueObjectMeta):
+class ValueObject[V](ABC):
     def __init__(self, raw_value: V) -> None: ...
     @classmethod
     @abstractmethod
     def validate(cls, value: V) -> V: ...
     @property
     def value(self) -> V: ...
+
+class SensitiveValueObject[V](ValueObject[V]):
+    """VO, чьё значение не должно попадать в логи/репрезентации."""
 ```
 
 Требования:
 - равенство и хеш — по классу и значению; VO разных классов никогда не равны;
 - сравнения (`<`, `<=`, `>`, `>=`) допустимы только между VO одного класса,
   иначе `TypeError`;
-- мета-флаг `sensitive=True`: `repr` маскирует значение (`ClassName([MASKED])`),
-  `str` бросает `SensitiveValueAccessError` — защита от утечки в логи;
+- `SensitiveValueObject` — отдельный подкласс (не флаг): `repr` маскирует
+  значение (`ClassName([MASKED])`), `str` бросает
+  `SensitiveValueAccessError` — защита от утечки в логи; маскирование
+  наследуется подклассами;
 - копирование (`copy`/`deepcopy`) возвращает VO того же класса;
 - `PrimaryKey = TypeVar("PrimaryKey", UUID, int, str)` — ограниченный тип
   идентификатора сущностей.
@@ -394,7 +404,7 @@ class Connector(Protocol):
 
 - абстракция над источником данных (БД-сессия, HTTP-клиент и т.п.);
 - конкретные коннекторы (`HttpConnector` и др.) получают настройки через
-  конструктор (typed settings, в pydantic-extra — через `pydantic-settings`).
+  конструктор (typed settings).
 
 ## 9. Presentation layer (entrypoints)
 
@@ -438,8 +448,11 @@ YadddError
 
 | Extra        | Что даёт                                             | Требование |
 |--------------|------------------------------------------------------|------------|
-| `pydantic`   | валидаторы Pydantic для ValueObject, typed settings  | ленивый импорт внутри модуля интеграции; ядро не импортирует pydantic |
 | `sqlalchemy` | type decorators для ValueObject, `SqlRepository`, `SqlUnitOfWork` | ленивый импорт; ядро не импортирует sqlalchemy |
+
+Отложено до будущих версий: extra `pydantic` (валидаторы Pydantic для
+ValueObject, typed settings) — была удалена из v0.1 и вернётся с более
+осознанным дизайном интеграции.
 
 Правило: `pip install yaddd` никогда не тянет сторонних пакетов;
 импорт ядра никогда не падает из-за отсутствия optional-зависимости —
@@ -458,8 +471,8 @@ YadddError
 - **Гейты перед завершением изменения**: `ruff check . && ruff format --check .`
   `&& mypy src && pyright src && pytest`.
 - **Стиль**: keyword-only аргументы для функций с >1 параметром и всех bool;
-  `slots=True` в dataclass'ах; без метаклассов в публичном API (исключение —
-  `_ValueObjectMeta` как внутренняя деталь VO).
+  `slots=True` в dataclass'ах; без метаклассов — поведение выражается
+  наследованием (напр., `SensitiveValueObject` вместо мета-флага).
 
 ## 13. Протокол архитектурных решений
 
@@ -487,7 +500,7 @@ YadddError
 
 | Термин | Определение | В yaddd |
 |--------|-------------|---------|
-| Value Object (объект-значение) | Объект без идентичности, равенство по значению; валидируется при создании и далее считается доверенным | `ValueObject[V]`, `domain/values.py` |
+| Value Object (объект-значение) | Объект без идентичности, равенство по значению; валидируется при создании и далее считается доверенным | `ValueObject[V]`, `SensitiveValueObject[V]`, `domain/value_object/` |
 | Entity (сущность) | Объект с идентичностью; равенство по идентификатору, а не по полям | `Entity`, `domain/entities.py` |
 | Aggregate Root (корень агрегата) | Единственная точка входа в граф сущностей агрегата; гарантирует инварианты | `AggregateRoot`, `INVARIANTS`, `check_invariants()` |
 | Invariant (инвариант) | Условие, которое агрегат обязан соблюдать всегда | `BusinessRule` в `AggregateRoot.INVARIANTS` |

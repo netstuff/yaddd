@@ -16,5 +16,4 @@ You can choose any modern one dependencies manager like a:
 `uv sync` or `poetry install` (only poetry >= 2.0)
 
 Also you can choose optional dependencies for `yaddd` wich enable integration with third-part libraries:
-1. `yaddd[pydantic]` — supports Pydnatic validators for `ValueObject`
-2. `yaddd[sqlalchemy]` — supports type decorators in `ValueObject`
+1. `yaddd[sqlalchemy]` — supports type decorators in `ValueObject`
