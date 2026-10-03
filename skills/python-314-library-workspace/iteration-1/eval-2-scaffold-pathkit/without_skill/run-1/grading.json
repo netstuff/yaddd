@@ -1,0 +1,78 @@
+{
+  "eval_name": "scaffold-pathkit",
+  "run": "without_skill",
+  "expectations": [
+    {
+      "id": "requires_python_314",
+      "text": "requires-python >= 3.14",
+      "passed": true,
+      "evidence": [
+        "requires-python = \">=3.14\""
+      ]
+    },
+    {
+      "id": "empty_core_deps",
+      "text": "core dependencies пустые",
+      "passed": true,
+      "evidence": "[]"
+    },
+    {
+      "id": "pytyped_present",
+      "text": "py.typed существует",
+      "passed": true,
+      "evidence": "src/pathkit/py.typed"
+    },
+    {
+      "id": "mypy_strict",
+      "text": "mypy strict = true",
+      "passed": true,
+      "evidence": [
+        "# ---------- type checking: strict, both checkers ----------",
+        "strict = true",
+        "typeCheckingMode = \"strict\""
+      ]
+    },
+    {
+      "id": "pyright_configured",
+      "text": "pyright настроен",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "id": "ruff_up_pt",
+      "text": "ruff с UP и PT, target py314",
+      "passed": true,
+      "evidence": "UP: True, PT: True, py314: True"
+    },
+    {
+      "id": "pytest_configured",
+      "text": "pytest.ini_options",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "id": "uv_convention",
+      "text": "dependency-groups",
+      "passed": true,
+      "evidence": true
+    },
+    {
+      "id": "module_and_test",
+      "text": "Модуль с аннотированной функцией + тест",
+      "passed": true,
+      "evidence": "defs with ->: True; tests: True"
+    },
+    {
+      "id": "stdlib_only_module",
+      "text": "Модуль только stdlib",
+      "passed": true,
+      "evidence": "third-party: none"
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0
+  }
+}

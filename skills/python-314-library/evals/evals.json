@@ -1,0 +1,133 @@
+{
+  "skill_name": "python-314-library",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Задача: в репозитории /Users/yuryandreev/Sites/github/yaddd нужно добавить модуль настройки (settings) для библиотеки yaddd: загрузка конфигурации из переменных окружения с дефолтами, типизированный доступ к значениям. Напиши код модуля src/yaddd/settings_config.py, экспортируй публичный API из пакета, напиши тесты. Не используй pydantic-settings — только stdlib, библиотека должна остаться без обязательных зависимостей.",
+      "expected_output": "Модуль с stdlib-реализацией (os.environ + dataclass(slots=True)), полной аннотацией типов, keyword-only API, экспортом через __init__ __all__, тестами pytest на публичное API. Без внешних импортов.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Модуль импортирует только stdlib (нет pydantic и прочих сторонних импортов)",
+          "id": "stdlib_only"
+        },
+        {
+          "text": "Все публичные функции/методы полностью аннотированы",
+          "id": "fully_annotated"
+        },
+        {
+          "text": "Используется dataclass(slots=True) или class ... (slots=True) для типов настроек",
+          "id": "slots_used"
+        },
+        {
+          "text": "Нет Config = Dict[str, Any]; конфиг типизирован (TypedDict / dataclass / Generic)",
+          "id": "no_any_alias"
+        },
+        {
+          "text": "Функции с несколькими параметрами или boolean-параметрами используют keyword-only аргументы",
+          "id": "keyword_only"
+        },
+        {
+          "text": "Показан экспорт публичного API (содержимое __init__.py с __all__)",
+          "id": "export_shown"
+        },
+        {
+          "text": "Тесты вызывают публичное API как пользователь (нет обращений к _private именам)",
+          "id": "tests_public_api"
+        },
+        {
+          "text": "Для исключений в тестах используется pytest.raises с match=",
+          "id": "raises_with_match"
+        },
+        {
+          "text": "Нет неоправданного module-level изменяемого глобального состояния",
+          "id": "no_global_state"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Создай с нуля скелет новой Python-библиотеки 'pathkit' (утилиты для работы с путями поверх pathlib) для Python 3.14+ в директории /tmp/pathkit. Нужны pyproject.toml, структура src/, конфигурация ruff/mypy strict/pyright/pytest, маркер py.typed и минимальный рабочий модуль с одной функцией и тестом.",
+      "expected_output": "Полный проект: pyproject.toml с requires-python >=3.14, mypy strict + pyright strict конфигами, ruff с UP/PT правилами, py.typed файл, рабочий src/pathkit с типизированной функцией и тестом. Никаких внешних зависимостей в core.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "requires-python >= 3.14",
+          "id": "requires_python_314"
+        },
+        {
+          "text": "core dependencies пустые (dependencies = [])",
+          "id": "empty_core_deps"
+        },
+        {
+          "text": "Файл py.typed существует в пакете",
+          "id": "pytyped_present"
+        },
+        {
+          "text": "mypy настроен со strict = true",
+          "id": "mypy_strict"
+        },
+        {
+          "text": "pyright настроен (typeCheckingMode strict или basic)",
+          "id": "pyright_configured"
+        },
+        {
+          "text": "ruff настроен с UP и PT правилами и target-version py314",
+          "id": "ruff_up_pt"
+        },
+        {
+          "text": "pytest настроен через [tool.pytest.ini_options]",
+          "id": "pytest_configured"
+        },
+        {
+          "text": "Используются dependency-groups (конвенция uv)",
+          "id": "uv_convention"
+        },
+        {
+          "text": "Модуль содержит аннотированную функцию и есть тест",
+          "id": "module_and_test"
+        },
+        {
+          "text": "Модуль импортирует только stdlib",
+          "id": "stdlib_only_module"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Проведи ревью этого кода перед мержем и перечисли все проблемы по нашим стандартам библиотеки (строгая типизация, минимум зависимостей, публичный API):\n\n```python\nimport json\nfrom typing import Any, Dict, Optional\n\nCACHE = {}\n\ndef load_config(path, strict=False):\n    with open(path) as f:\n        data = json.load(f)\n    CACHE[path] = data\n    return data\n\ndef get_value(config, key):\n    try:\n        return config[key]\n    except KeyError:\n        raise Exception(\"missing key\")\n\nConfig = Dict[str, Any]\n```\n\nКак бы ты это переписал?",
+      "expected_output": "Ревью находит: отсутствие аннотаций, Any-heavy Config-алиас вместо TypedDict/дженериков, глобальный изменяемый кэш (no-GIL небезопасно), boolean позиционный аргумент, широкое Exception без иерархии библиотеки, нет __all__/py.typed-мышления, typing.Dict устаревший синтаксис. Переписка: keyword-only strict, TypedDict или Protocol, add_note/цепочка исключений, кэш только при необходимости.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Найдено: отсутствие аннотаций у load_config/get_value",
+          "id": "finds_untyped"
+        },
+        {
+          "text": "Найдено: Config = Dict[str, Any] (Any-алиас) и неиспользуемый импорт Optional",
+          "id": "finds_any_alias"
+        },
+        {
+          "text": "Найдено: module-level изменяемый кэш CACHE (небезопасно для no-GIL)",
+          "id": "finds_global_cache"
+        },
+        {
+          "text": "Найдено: широкий raise Exception без иерархии библиотеки",
+          "id": "finds_bare_exception"
+        },
+        {
+          "text": "Найдено: strict=False как позиционный boolean / предложено keyword-only",
+          "id": "finds_positional_bool"
+        },
+        {
+          "text": "Найдено: устаревшие typing.Dict/Optional вместо современного синтаксиса",
+          "id": "finds_legacy_typing"
+        },
+        {
+          "text": "Переписанная версия: аннотации + keyword-only + конкретные исключения (from/add_note)",
+          "id": "rewrite_improves"
+        }
+      ]
+    }
+  ]
+}
