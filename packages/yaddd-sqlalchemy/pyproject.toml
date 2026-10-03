@@ -23,7 +23,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0",
 ]
 version = "0.1.0"
-dynamic = ['readme']
+readme = 'README.md'
 
 [project.urls]
 Homepage = 'https://github.com/pyDDD/yaddd'

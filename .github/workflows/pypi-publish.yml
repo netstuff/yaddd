@@ -20,14 +20,14 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write  # Trusted Publishing (OIDC) to PyPI
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install uv and Python
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
     - name: Build package
       run: uv build --package yaddd
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_YADDD }}
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33

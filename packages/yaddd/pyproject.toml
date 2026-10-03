@@ -19,8 +19,8 @@ classifiers = [
 ]
 requires-python = '>=3.12'
 dependencies = []
-version = "0.1.0"
-dynamic = ['readme']
+version = "0.2.0"
+readme = 'README.md'
 
 [project.urls]
 Homepage = 'https://github.com/pyDDD/yaddd'

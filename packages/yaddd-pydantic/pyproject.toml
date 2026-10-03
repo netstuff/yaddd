@@ -23,7 +23,7 @@ dependencies = [
     "pydantic>=2.10",
 ]
 version = "0.1.0"
-dynamic = ['readme']
+readme = 'README.md'
 
 [project.urls]
 Homepage = 'https://github.com/pyDDD/yaddd'
