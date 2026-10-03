@@ -58,6 +58,13 @@ from yaddd.infrastructure import (
     ReadModel,
     ReadModelRepository,
 )
+from yaddd.presentation import (
+    CliCommand,
+    HttpHandler,
+    HttpRequest,
+    HttpResponse,
+    Resolver,
+)
 from yaddd.shared.specification import Specification
 
 
@@ -69,6 +76,7 @@ __all__ = [
     "BusinessRule",
     "BusinessRuleViolationError",
     "BytesValueObject",
+    "CliCommand",
     "Command",
     "CommandHandler",
     "Connector",
@@ -87,6 +95,9 @@ __all__ = [
     "EventPublisher",
     "FloatValueObject",
     "HandlerNotFoundError",
+    "HttpHandler",
+    "HttpRequest",
+    "HttpResponse",
     "InMemoryCrudRepository",
     "InMemoryEventPublisher",
     "InfrastructureError",
@@ -100,6 +111,7 @@ __all__ = [
     "ReadModel",
     "ReadModelRepository",
     "Repository",
+    "Resolver",
     "SensitiveValueAccessError",
     "SensitiveValueObject",
     "Specification",

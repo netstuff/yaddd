@@ -443,7 +443,8 @@ class Connector(Protocol):
 конкретным фреймворкам — вне ядра (опциональные extras или код приложения).
 
 - **CLI**: `CliCommand` (Protocol) — `run(args) -> int` (exit code);
-  нейтрален к argparse/click/typer.
+  нейтрален к argparse/click/typer. `run` синхронный намеренно: entrypoint
+  владеет event loop (`asyncio.run(...)` внутри), см. ADR-4 (§13).
 - **HTTP**: нейтральные `HttpRequest`/`HttpResponse` (dataclass: method, path,
   headers, body / status, headers, body) + `HttpHandler` (Protocol:
   `async def handle(request) -> HttpResponse`). Адаптер к FastAPI/aiohttp
