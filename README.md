@@ -16,7 +16,8 @@ First, read [Domain Driven Thesaurus](SPEC.md#15-глоссарий-ddd-терм
 This is a monorepo: the dependency-free core and its integrations are separate distributions under `packages/`:
 
 1. `pip install yaddd` — the core library, zero dependencies;
-2. `pip install yaddd-sqlalchemy` — SQLAlchemy plugin: `SqlCrudRepository`, `SqlUnitOfWork`, `VOTypeDecorator`.
+2. `pip install yaddd-sqlalchemy` — SQLAlchemy plugin: `SqlCrudRepository`, `SqlUnitOfWork`, `VOTypeDecorator`;
+3. `pip install yaddd-pydantic` — pydantic v2 plugin: `PydanticVO` value objects as first-class model fields.
 
 ## Quickstart
 One import line gives you the whole public surface:

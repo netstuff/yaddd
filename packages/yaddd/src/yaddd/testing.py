@@ -28,10 +28,11 @@ import pytest
 from yaddd.application.uow import UnitOfWork
 from yaddd.domain.entities import AggregateRoot
 from yaddd.domain.repositories import CrudRepository
+from yaddd.domain.value_object import ValueObject
 from yaddd.exceptions import EntityNotFoundError
 
 
-__all__ = ["CrudRepositoryContract", "UnitOfWorkContract"]
+__all__ = ["CrudRepositoryContract", "UnitOfWorkContract", "VoSerializationContract"]
 
 
 class CrudRepositoryContract:
@@ -173,3 +174,80 @@ class UnitOfWorkContract:
 
         if assert_rolled_back is not None:
             await assert_rolled_back()
+
+
+class VoSerializationContract:
+    """Executable specification for a value-object serialization plugin.
+
+    Framework-agnostic: a serialization plugin (pydantic, msgspec, ...)
+    proves that value objects behave as first-class field types by
+    subclassing this contract in its test suite and overriding the fixtures:
+
+    - ``vo`` — a valid VO instance used for round-trip tests;
+    - ``invalid_raw`` — a raw value the VO must reject;
+    - ``dump`` — serialize a VO through the framework
+      (e.g. ``TypeAdapter.dump_python``); must produce a plain value;
+    - ``load`` — deserialize a raw value into a VO through the framework
+      (e.g. ``TypeAdapter.validate_python``);
+    - ``sensitive_vo`` — a ``SensitiveValueObject`` instance with a
+      recognizable secret payload;
+    - ``container_repr`` — ``repr()`` of a framework container (a model,
+      struct, ...) holding the given VO; used to prove that representations
+      do not leak sensitive payloads.
+
+    ``invalid_raw`` is expected to fail with ``ValueError``: the common
+    ancestor of framework validation errors (pydantic ``ValidationError``,
+    msgspec ``DecodeError``/``ValidationError``, ...).
+    """
+
+    @pytest.fixture
+    def vo(self) -> ValueObject[Any]:
+        """A valid VO instance used for round-trip tests."""
+        raise NotImplementedError
+
+    @pytest.fixture
+    def invalid_raw(self) -> Any:
+        """A raw value the VO under test must reject."""
+        raise NotImplementedError
+
+    @pytest.fixture
+    def dump(self) -> Callable[[ValueObject[Any]], Any]:
+        """Serialize a VO through the framework under test."""
+        raise NotImplementedError
+
+    @pytest.fixture
+    def load(self) -> Callable[[Any], ValueObject[Any]]:
+        """Deserialize a raw value into a VO through the framework."""
+        raise NotImplementedError
+
+    @pytest.fixture
+    def sensitive_vo(self) -> ValueObject[Any]:
+        """A SensitiveValueObject instance with a recognizable secret."""
+        raise NotImplementedError
+
+    @pytest.fixture
+    def container_repr(self) -> Callable[[ValueObject[Any]], str]:
+        """``repr()`` of a framework container holding the given VO."""
+        raise NotImplementedError
+
+    def test_round_trip(
+        self,
+        vo: ValueObject[Any],
+        dump: Callable[[ValueObject[Any]], Any],
+        load: Callable[[Any], ValueObject[Any]],
+    ) -> None:
+        assert load(dump(vo)) == vo
+
+    def test_dump_produces_primitive(self, vo: ValueObject[Any], dump: Callable[[ValueObject[Any]], Any]) -> None:
+        dumped = dump(vo)
+        assert not isinstance(dumped, ValueObject)
+        assert dumped != repr(vo)
+
+    def test_invalid_raw_raises(self, load: Callable[[Any], ValueObject[Any]], invalid_raw: Any) -> None:
+        with pytest.raises(ValueError):
+            load(invalid_raw)
+
+    def test_sensitive_vo_repr_is_masked(
+        self, sensitive_vo: ValueObject[Any], container_repr: Callable[[ValueObject[Any]], str]
+    ) -> None:
+        assert str(sensitive_vo.value) not in container_repr(sensitive_vo)

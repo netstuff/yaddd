@@ -109,15 +109,22 @@ packages/
 │   │       ├── http.py          # порты Request/Response/Router
 │   │       └── graphql.py       # порт Resolver
 │   └── tests/
-└── yaddd-sqlalchemy/         # плагин, дистрибутив `yaddd-sqlalchemy` (§12)
-    ├── pyproject.toml        # dependencies: yaddd>=0.1, sqlalchemy[asyncio]>=2.0
-    ├── src/yaddd_sqlalchemy/
+├── yaddd-sqlalchemy/         # плагин, дистрибутив `yaddd-sqlalchemy` (§12)
+│   ├── pyproject.toml        # dependencies: yaddd>=0.1, sqlalchemy[asyncio]>=2.0
+│   ├── src/yaddd_sqlalchemy/
+│   │   ├── __init__.py          # публичный реэкспорт + __all__
+│   │   ├── py.typed
+│   │   ├── repositories.py      # SqlCrudRepository (§8.1)
+│   │   ├── uow.py               # SqlUnitOfWork (§8.2)
+│   │   └── value_objects.py     # VOTypeDecorator
+│   └── tests/                # контрактные + интеграционные тесты (aiosqlite)
+└── yaddd-pydantic/           # плагин, дистрибутив `yaddd-pydantic` (§12)
+    ├── pyproject.toml        # dependencies: yaddd>=0.1, pydantic>=2.10
+    ├── src/yaddd_pydantic/
     │   ├── __init__.py          # публичный реэкспорт + __all__
     │   ├── py.typed
-    │   ├── repositories.py      # SqlCrudRepository (§8.1)
-    │   ├── uow.py               # SqlUnitOfWork (§8.2)
-    │   └── value_objects.py     # VOTypeDecorator
-    └── tests/                # контрактные + интеграционные тесты (aiosqlite)
+    │   └── value_objects.py     # PydanticVO
+    └── tests/                # контрактные тесты + тесты полей BaseModel
 ```
 
 Каждый модуль объявляет `__all__`; корневой `__init__.py` реэкспортирует
@@ -528,10 +535,11 @@ YadddError
 | Дистрибутив       | Импортное имя      | Что даёт |
 |-------------------|--------------------|----------|
 | `yaddd-sqlalchemy` | `yaddd_sqlalchemy` | `SqlCrudRepository` (§8.1), `SqlUnitOfWork` (§8.2), `VOTypeDecorator` (type decorator для ValueObject) |
+| `yaddd-pydantic`  | `yaddd_pydantic`   | `PydanticVO[V]` — ValueObject как полноценный тип поля в pydantic v2 моделях: констрейнты pydantic как валидация VO, примитивы в `model_dump()`/JSON Schema, маскирование `SensitiveValueObject` сохранено |
 
-Отложено до будущих версий: интеграция `pydantic` (валидаторы Pydantic для
-ValueObject, typed settings) — была удалена из v0.1 и вернётся с более
-осознанным дизайном, тоже отдельным дистрибутивом.
+Два вида плагинов уже представлены: **persistence** (`yaddd-sqlalchemy` —
+реализации портов хранения) и **serialization** (`yaddd-pydantic` — VO как
+типы полей фреймворка сериализации).
 
 Правило: `pip install yaddd` никогда не тянет сторонних пакетов;
 импорт ядра никогда не падает из-за отсутствия optional-зависимости —
@@ -552,10 +560,11 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
   root приложения: никакого auto-discovery, entry points и реестров —
   зависимость видна в коде и в `pyproject.toml` потребителя.
 - **Контрактные тесты как исполняемая спецификация портов.** Модуль
-  `yaddd.testing` (test-only) содержит базовые наборы `CrudRepositoryContract`
-  и `UnitOfWorkContract`: плагин наследует класс в своей тестовой suite,
-  переопределяет фикстуры и доказывает соответствие порту. Тот же механизм
-  доступен сторонним плагинам.
+  `yaddd.testing` (test-only) содержит базовые наборы контрактных тестов:
+  `CrudRepositoryContract` и `UnitOfWorkContract` — для persistence-плагинов,
+  `VoSerializationContract` — для serialization-плагинов. Плагин наследует
+  класс в своей тестовой suite, переопределяет фикстуры и доказывает
+  соответствие порту. Тот же механизм доступен сторонним плагинам.
 - **Пиновка версии ядра.** Плагин зависит от `yaddd>=x` (в workspace —
   через `[tool.uv.sources] yaddd = { workspace = true }`) и выпускается
   независимо, со своей версией.

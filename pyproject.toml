@@ -70,7 +70,7 @@ lines-after-imports = 2
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests"]
+testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests", "packages/yaddd-pydantic/tests"]
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "-s -v -p no:warnings -m 'not with_db'"
 env_override_existing_values = 1
@@ -87,16 +87,17 @@ markers = [
 [tool.mypy]
 python_version = "3.12"
 strict = true
-mypy_path = "packages/yaddd/src:packages/yaddd-sqlalchemy/src"
-packages = ["yaddd", "yaddd_sqlalchemy"]
+mypy_path = "packages/yaddd/src:packages/yaddd-sqlalchemy/src:packages/yaddd-pydantic/src"
+packages = ["yaddd", "yaddd_sqlalchemy", "yaddd_pydantic"]
 
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
-include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src"]
+include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src", "packages/yaddd-pydantic/src"]
 executionEnvironments = [
     { root = "packages/yaddd", extraPaths = ["src"] },
     { root = "packages/yaddd-sqlalchemy", extraPaths = ["src", "../yaddd/src"] },
+    { root = "packages/yaddd-pydantic", extraPaths = ["src", "../yaddd/src"] },
 ]
 
 [tool.uv]
