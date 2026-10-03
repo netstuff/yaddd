@@ -1,0 +1,54 @@
+{
+  "eval_name": "review-flawed-code",
+  "run": "without_skill",
+  "expectations": [
+    {
+      "id": "finds_untyped",
+      "text": "Найдено: нет аннотаций",
+      "passed": true,
+      "evidence": "keyword present"
+    },
+    {
+      "id": "finds_any_alias",
+      "text": "Найдено: Dict[str, Any] алиас / мёртвый Optional",
+      "passed": true,
+      "evidence": "alias+optional discussed"
+    },
+    {
+      "id": "finds_global_cache",
+      "text": "Найдено: глобальный CACHE",
+      "passed": true,
+      "evidence": "cache/global discussed"
+    },
+    {
+      "id": "finds_bare_exception",
+      "text": "Найдено: голый Exception",
+      "passed": true,
+      "evidence": "bare exception + chaining discussed"
+    },
+    {
+      "id": "finds_positional_bool",
+      "text": "Найдено: позиционный boolean strict",
+      "passed": true,
+      "evidence": "keyword-only/bool-flag discussed"
+    },
+    {
+      "id": "finds_legacy_typing",
+      "text": "Найдено: легаси typing.Dict/Optional",
+      "passed": true,
+      "evidence": "legacy typing discussed"
+    },
+    {
+      "id": "rewrite_improves",
+      "text": "Переписка: аннотации + keyword-only + конкретные исключения",
+      "passed": true,
+      "evidence": "annotations: True, kw-only: True, exceptions: True"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

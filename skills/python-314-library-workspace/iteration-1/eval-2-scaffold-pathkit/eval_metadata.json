@@ -1,0 +1,17 @@
+{
+  "eval_id": 2,
+  "eval_name": "scaffold-pathkit",
+  "prompt": "Создай с нуля скелет новой Python-библиотеки 'pathkit' (утилиты для работы с путями поверх pathlib) для Python 3.14+ в директории /tmp/pathkit. Нужны pyproject.toml, структура src/, конфигурация ruff/mypy strict/pyright/pytest, маркер py.typed и минимальный рабочий модуль с одной функцией и тестом.",
+  "assertions": [
+    {"text": "requires-python >= 3.14", "id": "requires_python_314"},
+    {"text": "core dependencies пустые (dependencies = [])", "id": "empty_core_deps"},
+    {"text": "Файл py.typed существует в пакете", "id": "pytyped_present"},
+    {"text": "mypy настроен со strict = true", "id": "mypy_strict"},
+    {"text": "pyright настроен (typeCheckingMode strict или basic)", "id": "pyright_configured"},
+    {"text": "ruff настроен с UP и PT правилами и target-version py314", "id": "ruff_up_pt"},
+    {"text": "pytest настроен через [tool.pytest.ini_options]", "id": "pytest_configured"},
+    {"text": "Используются dependency-groups (конвенция uv)", "id": "uv_convention"},
+    {"text": "Модуль содержит аннотированную функцию и есть тест", "id": "module_and_test"},
+    {"text": "Модуль импортирует только stdlib", "id": "stdlib_only_module"}
+  ]
+}

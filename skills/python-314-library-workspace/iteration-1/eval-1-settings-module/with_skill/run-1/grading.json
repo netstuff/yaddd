@@ -1,0 +1,66 @@
+{
+  "eval_name": "settings-module",
+  "run": "with_skill",
+  "expectations": [
+    {
+      "id": "stdlib_only",
+      "text": "Модуль импортирует только stdlib",
+      "passed": true,
+      "evidence": "third-party imports: none"
+    },
+    {
+      "id": "fully_annotated",
+      "text": "Все публичные функции/методы полностью аннотированы",
+      "passed": true,
+      "evidence": "5/5 def-строк содержат ->"
+    },
+    {
+      "id": "slots_used",
+      "text": "dataclass(slots=True) или slots / обоснованная иммутабельность",
+      "passed": true,
+      "evidence": "immutability via __setattr__ + justification"
+    },
+    {
+      "id": "no_any_alias",
+      "text": "Нет Config = Dict[str, Any]; конфиг типизирован",
+      "passed": true,
+      "evidence": "alias found: False; TypedDict/dataclass/class present: True"
+    },
+    {
+      "id": "keyword_only",
+      "text": "keyword-only аргументы у многопараметрических/булевых функций",
+      "passed": true,
+      "evidence": "`*` found in signatures"
+    },
+    {
+      "id": "export_shown",
+      "text": "Показан экспорт публичного API (__init__ + __all__)",
+      "passed": true,
+      "evidence": "__all__ in outputs"
+    },
+    {
+      "id": "tests_public_api",
+      "text": "Тесты вызывают публичное API (нет _private доступа)",
+      "passed": true,
+      "evidence": "no private-name access in tests"
+    },
+    {
+      "id": "raises_with_match",
+      "text": "pytest.raises с match=",
+      "passed": true,
+      "evidence": "pytest.raises: True, match=: True"
+    },
+    {
+      "id": "no_global_state",
+      "text": "Нет неоправданного module-level изменяемого состояния",
+      "passed": true,
+      "evidence": "module-level mutable global: False"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

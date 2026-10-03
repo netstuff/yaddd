@@ -1,0 +1,14 @@
+{
+  "eval_id": 3,
+  "eval_name": "review-flawed-code",
+  "prompt": "Проведи ревью этого кода перед мержем и перечисли все проблемы по нашим стандартам библиотеки (строгая типизация, минимум зависимостей, публичный API):\n\n```python\nimport json\nfrom typing import Any, Dict, Optional\n\nCACHE = {}\n\ndef load_config(path, strict=False):\n    with open(path) as f:\n        data = json.load(f)\n    CACHE[path] = data\n    return data\n\ndef get_value(config, key):\n    try:\n        return config[key]\n    except KeyError:\n        raise Exception(\"missing key\")\n\nConfig = Dict[str, Any]\n```\n\nКак бы ты это переписал?",
+  "assertions": [
+    {"text": "Найдено: отсутствие аннотаций у load_config/get_value", "id": "finds_untyped"},
+    {"text": "Найдено: Config = Dict[str, Any] (Any-алиас) и неиспользуемый импорт Optional", "id": "finds_any_alias"},
+    {"text": "Найдено: module-level изменяемый кэш CACHE (небезопасно для no-GIL)", "id": "finds_global_cache"},
+    {"text": "Найдено: широкий raise Exception без иерархии библиотеки", "id": "finds_bare_exception"},
+    {"text": "Найдено: strict=False как позиционный boolean / предложено keyword-only", "id": "finds_positional_bool"},
+    {"text": "Найдено: устаревшие typing.Dict/Optional вместо современного синтаксиса", "id": "finds_legacy_typing"},
+    {"text": "Переписанная версия: аннотации + keyword-only + конкретные исключения (from/add_note)", "id": "rewrite_improves"}
+  ]
+}

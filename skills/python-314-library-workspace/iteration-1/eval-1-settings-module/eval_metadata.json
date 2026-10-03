@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "settings-module",
+  "prompt": "Задача: в репозитории /Users/yuryandreev/Sites/github/yaddd нужно добавить модуль настройки (settings) для библиотеки yaddd: загрузка конфигурации из переменных окружения с дефолтами, типизированный доступ к значениям. Напиши код модуля src/yaddd/settings_config.py, экспортируй публичный API из пакета, напиши тесты. Не используй pydantic-settings — только stdlib, библиотека должна остаться без обязательных зависимостей.",
+  "assertions": [
+    {"text": "Модуль импортирует только stdlib (нет pydantic и прочих сторонних импортов)", "id": "stdlib_only"},
+    {"text": "Все публичные функции/методы полностью аннотированы", "id": "fully_annotated"},
+    {"text": "Используется dataclass(slots=True) или class ... (slots=True) для типов настроек", "id": "slots_used"},
+    {"text": "Нет Config = Dict[str, Any]; конфиг типизирован (TypedDict / dataclass / Generic)", "id": "no_any_alias"},
+    {"text": "Функции с несколькими параметрами или boolean-параметрами используют keyword-only аргументы", "id": "keyword_only"},
+    {"text": "Показан экспорт публичного API (содержимое __init__.py с __all__)", "id": "export_shown"},
+    {"text": "Тесты вызывают публичное API как пользователь (нет обращений к _private именам)", "id": "tests_public_api"},
+    {"text": "Для исключений в тестах используется pytest.raises с match=", "id": "raises_with_match"},
+    {"text": "Нет неоправданного module-level изменяемого глобального состояния", "id": "no_global_state"}
+  ]
+}

@@ -1,0 +1,71 @@
+[project]
+name = "pathkit"
+version = "0.1.0"
+description = "Small utilities on top of pathlib for working with paths."
+requires-python = ">=3.14"
+dependencies = []  # stays empty until a dependency is PROVEN necessary
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",  # signals py.typed to indexers
+]
+
+[project.urls]
+Repository = "https://github.com/yaddd/pathkit"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.9",
+    "mypy>=1.15",
+    "pyright>=1.1.394",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pathkit"]
+
+# ---------- linting & formatting ----------
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I",   # pycodestyle, pyflakes, isort
+    "B",             # bugbear
+    "C4",            # comprehensions
+    "SIM",           # simplify
+    "RUF",           # ruff-specific
+    "UP",            # pyupgrade — enforces modern syntax for target-version
+    "PT",            # pytest style
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pathkit"]
+
+# ---------- type checking: strict, both checkers ----------
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unreachable = true
+mypy_path = "src"
+packages = ["pathkit"]
+
+[tool.pyright]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+include = ["src", "tests"]
+
+# ---------- tests ----------
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra -q"
