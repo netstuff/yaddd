@@ -33,6 +33,7 @@ sqlalchemy = [
 [dependency-groups]
 dev = [
     "pytest",
+    "pytest-asyncio",
 ]
 docs = []
 linting = [

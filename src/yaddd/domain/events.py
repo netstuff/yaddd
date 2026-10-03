@@ -1,15 +1,15 @@
 """Domain events."""
 
-from dataclasses import dataclass, field
+from dataclasses import field
 from datetime import UTC, datetime
-from typing import Any, dataclass_transform
+
+from yaddd.shared.dataclasses import FrozenDataclassMixin
 
 
 __all__ = ["DomainEvent"]
 
 
-@dataclass(frozen=True, kw_only=True)
-class DomainEvent:
+class DomainEvent(FrozenDataclassMixin):
     """Immutable record of a fact that happened in the domain.
 
     The event name is the class name. Subclasses are automatically converted
@@ -23,9 +23,3 @@ class DomainEvent:
     """
 
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-
-    @dataclass_transform(frozen_default=True, kw_only_default=True)
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        super().__init_subclass__(**kwargs)
-        if "__dataclass_params__" not in cls.__dict__:
-            dataclass(frozen=True, kw_only=True)(cls)

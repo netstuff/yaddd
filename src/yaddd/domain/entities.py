@@ -1,12 +1,13 @@
 """Domain entities and aggregate roots."""
 
-from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, cast, dataclass_transform
+from dataclasses import asdict
+from typing import Any, ClassVar, cast
 from uuid import UUID
 
 from yaddd.domain.events import DomainEvent
 from yaddd.domain.rules import BusinessRule
 from yaddd.exceptions import InvariantViolationError
+from yaddd.shared.dataclasses import DataclassMixin
 
 
 __all__ = ["AggregateRoot", "Entity", "PrimaryKey"]
@@ -14,7 +15,7 @@ __all__ = ["AggregateRoot", "Entity", "PrimaryKey"]
 type PrimaryKey = UUID | int | str
 
 
-class Entity:
+class Entity(DataclassMixin):
     """Domain entity: an object defined by identity, not by attributes.
 
     Equality and hashing are based on the primary key (``pk``) within the
@@ -35,12 +36,6 @@ class Entity:
 
     PRIMARY_KEY_NAME: ClassVar[str] = "id"
     INVARIANTS: ClassVar[tuple[BusinessRule[Any], ...]] = ()
-
-    @dataclass_transform(eq_default=False, kw_only_default=True)
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        super().__init_subclass__(**kwargs)
-        if "__dataclass_params__" not in cls.__dict__:
-            dataclass(eq=False, kw_only=True)(cls)
 
     def __post_init__(self) -> None:
         self.check_invariants()

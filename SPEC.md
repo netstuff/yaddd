@@ -74,7 +74,8 @@ src/yaddd/
 ├── py.typed
 ├── exceptions.py          # иерархия исключений (§9)
 ├── shared/
-│   └── specification.py   # Specification + комбинаторы
+│   ├── specification.py   # Specification + комбинаторы
+│   └── dataclasses.py     # DataclassMixin/FrozenDataclassMixin (PEP 681)
 ├── domain/
 │   ├── __init__.py
 │   ├── value_object/
@@ -194,8 +195,7 @@ class AggregateRoot(Entity):
 ### 6.4 DomainEvent
 
 ```python
-@dataclass(frozen=True, kw_only=True)
-class DomainEvent:
+class DomainEvent(FrozenDataclassMixin):
     occurred_at: datetime  # UTC, default=now
 ```
 
@@ -280,15 +280,14 @@ class CrudRepository[T: AggregateRoot](Repository[T], Protocol):
 ### 7.1 Command / Query
 
 ```python
-@dataclass(frozen=True, kw_only=True)
-class Command: ...
-
-@dataclass(frozen=True, kw_only=True)
-class Query: ...
+class Command(FrozenDataclassMixin): ...
+class Query(FrozenDataclassMixin): ...
 ```
 
 - иммутабельные намерения (изменить состояние / прочитать состояние);
-- никакой логики, только данные.
+- никакой логики, только данные;
+- подклассы автоматически становятся frozen-dataclass'ами (механизм
+  `FrozenDataclassMixin` из `shared/dataclasses.py`, как у `DomainEvent`).
 
 ### 7.2 Handlers
 
@@ -306,17 +305,24 @@ class QueryHandler[Q: Query, R](Protocol):
 
 ### 7.3 ApplicationService
 
+```python
+class ApplicationService[C: Command, R](ABC):
+    async def __call__(self, command: C) -> R: ...  # делегирует execute
+    @abstractmethod
+    async def execute(self, command: C) -> R: ...
+```
+
 Координатор сценария: загружает агрегат через порт репозитория, вызывает
 доменные методы, сохраняет, публикует события. Может делегировать шаги
 handler'ам. Базовый класс предоставляет только каркас (точку входа
-`execute`/`__call__`).
+`execute`/`__call__`); зависимости — через конструктор.
 
 ### 7.4 UnitOfWork
 
 ```python
 class UnitOfWork(Protocol):
     async def __aenter__(self) -> Self: ...
-    async def __aexit__(self, *exc: Any) -> None: ...  # rollback при исключении
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None: ...
     async def commit(self) -> None: ...
     async def rollback(self) -> None: ...
 ```
@@ -349,6 +355,9 @@ class InMemoryEventPublisher:
 - репозитории события не публикуют никогда;
 - ядро содержит Protocol + `InMemoryEventPublisher` (подписка на типы событий,
   для монолитов и тестов); брокерные адаптеры (Kafka, RabbitMQ) — вне ядра;
+- семантика `InMemoryEventPublisher`: диспетчеризация по `isinstance`
+  (подписка на базовый тип ловит подтипы), вызов последовательно в порядке
+  подписки, исключение handler'а прерывает диспетчеризацию и пробрасывается;
 - известный компромисс v0.1: зазор между commit и publish (publish упал —
   события потеряны). Кому нужны гарантии — реализует transactional outbox
   поверх тех же портов; дизайн ему не мешает.
@@ -356,12 +365,13 @@ class InMemoryEventPublisher:
 ### 7.6 DTO
 
 ```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class DTO: ...
+class DTO(FrozenDataclassMixin): ...
 ```
 
 - объект передачи данных через границу application↔presentation;
-- плоский, сериализуемый, без ссылок на доменные объекты.
+- плоский, сериализуемый, без ссылок на доменные объекты;
+- подклассы автоматически становятся frozen-dataclass'ами (без `slots=True` —
+  авто-применение dataclass работает только in-place, см. `DomainEvent`).
 
 ### 7.7 Mapper
 
