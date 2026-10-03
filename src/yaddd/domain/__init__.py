@@ -2,8 +2,10 @@
 
 from yaddd.domain.entities import AggregateRoot, Entity, PrimaryKey
 from yaddd.domain.events import DomainEvent
+from yaddd.domain.factories import Factory
 from yaddd.domain.repositories import CrudRepository, Repository
 from yaddd.domain.rules import BusinessRule
+from yaddd.domain.services import DomainService
 from yaddd.domain.value_object import (
     AnyStrValueObject,
     BytesValueObject,
@@ -32,7 +34,9 @@ __all__ = [
     "DecimalValueObject",
     "DictValueObject",
     "DomainEvent",
+    "DomainService",
     "Entity",
+    "Factory",
     "FloatValueObject",
     "IntValueObject",
     "NumericValueObject",

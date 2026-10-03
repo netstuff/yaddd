@@ -218,18 +218,35 @@ class DomainEvent(FrozenDataclassMixin):
 
 ```python
 class DomainService(Protocol):
-    """Маркерный протокол; конкретные сервисы определяет пользователь."""
+    """Stateless domain operation not belonging to a single aggregate."""
 ```
+
+Контракт (зафиксирован, проверяется код-ревью, а не механикой):
+- stateless: нет состояния экземпляра между вызовами;
+- синхронный, без I/O: доменные порты инжектируются через конструктор;
+- говорит на языке домена; вход и выход — доменные объекты.
+
+Сознательно не generic `DomainService[A, R]` с `__call__`: у сервиса может
+быть несколько операций с разными сигнатурами; маркер даёт якорь для
+документации, тип для реестров и место в глоссарии, не навязывая форму
+вызова.
 
 ### 6.6 Factory
 
 ```python
-class Factory[T: AggregateRoot](Protocol):
-    def create(self, **data: Any) -> T: ...
+class Factory[In, T: AggregateRoot](Protocol):
+    def create(self, data: In) -> T: ...
 ```
 
-- инкапсулирует сложное конструирование агрегата (восстановление из сырых
-  данных, генерация идентификаторов, проверка правил перед созданием).
+- инкапсулирует сложное конструирование **нового** агрегата: генерация
+  идентичности, сборка VO, правила на создание, событие «создан» (через
+  `AggregateRoot.add_event`);
+- вход типизирован (`In` — dataclass с сырыми данными, команда и т.п.),
+  а не `**data: Any`; дисперсия type-параметров выводится чекерами;
+- синхронный, без I/O: внешние данные — через доменный порт в конструкторе;
+- инварианты проверяются в `__post_init__` агрегата — фабрика их не дублирует;
+- реконституция из хранилища — ответственность репозитория/`Mapper`,
+  а не фабрики: форма хранения не должна просачиваться в домен.
 
 ### 6.7 Specification
 
@@ -271,6 +288,17 @@ class CrudRepository[T: AggregateRoot](Repository[T], Protocol):
     async def update(self, instance: T) -> T: ...
     async def delete(self, pk: PrimaryKey) -> None: ...
 ```
+
+### 6.10 Куда положить логику
+
+| Логика | Место |
+|--------|-------|
+| Про один агрегат, меняет его состояние | метод `AggregateRoot` |
+| Самосогласованность одной сущности | `Entity.INVARIANTS` |
+| Правило с сообщением об ошибке | `BusinessRule` (+ `Specification` для композиции) |
+| Про несколько агрегатов, без состояния | `DomainService` |
+| Сложное создание нового агрегата | `Factory` |
+| Оркестрация: загрузить → вызвать → сохранить | `ApplicationService` / handler (§7) |
 
 ## 7. Application layer
 
@@ -537,8 +565,8 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
 | Aggregate Root (корень агрегата) | Единственная точка входа в граф сущностей агрегата; гарантирует инварианты | `AggregateRoot`, `INVARIANTS`, `check_invariants()` |
 | Invariant (инвариант) | Условие, которое агрегат обязан соблюдать всегда | `BusinessRule` в `AggregateRoot.INVARIANTS` |
 | Domain Event (доменное событие) | Иммутабельная запись о свершившемся доменном факте | `DomainEvent`, `add_event/pull_events` |
-| Domain Service (доменный сервис) | Безсостояная доменная операция, не принадлежащая одному агрегату | `DomainService` (Protocol) |
-| Factory (фабрика) | Инкапсуляция сложного конструирования агрегата | `Factory[T]` (Protocol) |
+| Domain Service (доменный сервис) | Безсостояная доменная операция, не принадлежащая одному агрегату | `DomainService` (Protocol), `domain/services.py` |
+| Factory (фабрика) | Инкапсуляция сложного конструирования нового агрегата | `Factory[In, T]` (Protocol), `domain/factories.py` |
 | Specification (спецификация) | Переиспользуемое, композитное (`&`, `\|`, `~`, `^`) условие над кандидатом | `Specification[C]`, `shared/specification.py` |
 | Business Rule (бизнес-правило) | Спецификация с сообщением об ошибке; нарушение — исключение | `BusinessRule[C]`, `domain/rules.py` |
 | Repository interface (порт репозитория) | Контракт хранилища агрегатов на языке домена, без деталей хранения | `Repository`, `CrudRepository` (Protocols), `domain/repositories.py` |
