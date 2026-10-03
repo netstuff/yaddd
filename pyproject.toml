@@ -1,34 +1,5 @@
-[project]
-name = "yaddd"
-description = "Yet Another DDD for Python"
-authors = [
-    {name = "Yuri Andreev", email = "andreev.jr@gmail.com"},
-]
-license = 'MIT'
-license-files = ['LICENSE']
-classifiers = [
-    'Development Status :: 4 - Beta',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
-    'Programming Language :: Python :: 3.14',
-    'Intended Audience :: Developers',
-    'Operating System :: OS Independent',
-    'Topic :: Software Development :: Libraries :: Python Modules',
-    'Topic :: Internet',
-]
-requires-python = '>=3.12'
-dependencies = []
-version = "0.1.0"
-dynamic = ['readme']
-
-[project.urls]
-Homepage = 'https://github.com/pyDDD/yaddd'
-
-[project.optional-dependencies]
-sqlalchemy = [
-    "sqlalchemy>=2.0.37",
-]
+# Workspace root (virtual project — not a package itself).
+# Member distributions live under `packages/`.
 
 [dependency-groups]
 dev = [
@@ -40,7 +11,9 @@ linting = [
     "ruff",
     "isort",
 ]
-testing-extra = []
+testing-extra = [
+    "aiosqlite",
+]
 typechecking = [
     "mypy",
     "pyright>=1.1.392",
@@ -53,13 +26,16 @@ all = [
   { include-group = 'typechecking' },
 ]
 
+[tool.uv.workspace]
+members = ["packages/*"]
+
 [tool.ruff]
 line-length = 120
 extend-exclude = ["skills", "src_old", "dist"]
 
 [tool.ruff.lint]
 exclude = [
-  "tests/*.py",
+  "**/tests/*.py",
 ]
 select = [
   "E",  # pycodestyle
@@ -90,11 +66,11 @@ lines-after-imports = 2
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"packages/yaddd/src/yaddd/testing.py" = ["S101", "PT"]  # contract-test suites: asserts and pytest fixtures by design
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-pythonpath = ["src"]
-testpaths = ["tests"]
+testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests"]
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "-s -v -p no:warnings -m 'not with_db'"
 env_override_existing_values = 1
@@ -111,18 +87,18 @@ markers = [
 [tool.mypy]
 python_version = "3.12"
 strict = true
-mypy_path = "src"
-packages = ["yaddd"]
+mypy_path = "packages/yaddd/src:packages/yaddd-sqlalchemy/src"
+packages = ["yaddd", "yaddd_sqlalchemy"]
 
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
+include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src"]
+executionEnvironments = [
+    { root = "packages/yaddd", extraPaths = ["src"] },
+    { root = "packages/yaddd-sqlalchemy", extraPaths = ["src", "../yaddd/src"] },
+]
 
 [tool.uv]
-package = true
+package = false
 default-groups = ["all"]
-
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"

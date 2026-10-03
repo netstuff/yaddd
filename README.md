@@ -8,13 +8,15 @@ Framework-agnostic (in base) simple library which provides a base layers for bui
 - Presentation layer (CLI, HTTP, GraphQL)
 
 ## Terms and definitions
-First, read [Domain Driven Thesaurus](SPEC.md#14-глоссарий-ddd-терминов)
+First, read [Domain Driven Thesaurus](SPEC.md#15-глоссарий-ddd-терминов)
 
 ## Installation
 `uv sync` — the project is managed with [uv](https://docs.astral.sh/uv/).
 
-Optional dependencies enable integration with third-party libraries:
-1. `yaddd[sqlalchemy]` — supports type decorators in `ValueObject`
+This is a monorepo: the dependency-free core and its integrations are separate distributions under `packages/`:
+
+1. `pip install yaddd` — the core library, zero dependencies;
+2. `pip install yaddd-sqlalchemy` — SQLAlchemy plugin: `SqlCrudRepository`, `SqlUnitOfWork`, `VOTypeDecorator`.
 
 ## Quickstart
 One import line gives you the whole public surface:
@@ -115,10 +117,10 @@ after `commit()` — see [SPEC.md](SPEC.md) for the layer contracts.
 
 ## Development
 ```bash
-uv sync                     # installs all dependency groups
+uv sync                     # installs the workspace and all dependency groups
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy src
-uv run pyright src
+uv run mypy
+uv run pyright
 uv run pytest
 ```

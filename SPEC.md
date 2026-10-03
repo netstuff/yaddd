@@ -17,11 +17,11 @@
 
 Библиотека не привязана к веб-фреймворку, ORM или DI-контейнеру: она задаёт
 контракты (Protocols/ABC) и базовые реализации, а интеграции с внешними
-библиотеками вынесены в опциональные extras.
+библиотеками вынесены в отдельные дистрибутивы-плагины (§11, §12).
 
 ## 2. Цели
 
-1. Дать единый словарь абстракций DDD, разложенный по слоям (см. §11).
+1. Дать единый словарь абстракций DDD, разложенный по слоям (см. §15).
 2. Обеспечить строгую типизацию публичного API: `mypy --strict` + `pyright`,
    маркер `py.typed` в пакете.
 3. Нулевые обязательные зависимости: ядро использует только stdlib.
@@ -51,11 +51,11 @@ infrastructure → domain (реализует порты домена)
   Здесь объявлены порты (Protocols) репозиториев.
 - **application** зависит только от domain.
 - **infrastructure** зависит от domain (реализации портов, коннекторы,
-  read models). Опциональные сторонние пакеты импортируются лениво, внутри
-  модуля интеграции.
+  read models). Интеграции со сторонними пакетами (SQLAlchemy и т.п.) живут
+  в отдельных дистрибутивах-плагинах (§12), а не в ядре.
 - **presentation** зависит от application и domain; адаптеры к конкретным
-  фреймворкам (FastAPI, aiohttp, strawberry, click/argparse) — опциональные
-  extras, ядро определяет только порты.
+  фреймворкам (FastAPI, aiohttp, strawberry, click/argparse) — плагины или
+  код приложения, ядро определяет только порты.
 
 Ядро синхронное; инфраструктурные порты (Repository, Connector, UnitOfWork,
 EventPublisher) — async-only (`async def`), т.к. их реализации по природе
@@ -68,52 +68,62 @@ sync (например, Django-ORM), sync-порты добавятся отде
 
 ## 5. Структура пакета
 
+Монорепозиторий на uv workspace: корневой `pyproject.toml` — виртуальный
+(`package = false`, `[tool.uv.workspace] members = ["packages/*"]`), каждый
+дистрибутив живёт в `packages/<name>/` со своим `pyproject.toml`:
+
 ```
-src/yaddd/
-├── __init__.py            # публичный реэкспорт + __all__
-├── py.typed
-├── exceptions.py          # иерархия исключений (§9)
-├── shared/
-│   ├── specification.py   # Specification + комбинаторы
-│   └── dataclasses.py     # DataclassMixin/FrozenDataclassMixin (PEP 681)
-├── domain/
-│   ├── __init__.py
-│   ├── value_object/
-│   │   ├── __init__.py      # публичный реэкспорт VO + __all__
-│   │   ├── base.py          # ValueObject, SensitiveValueObject
-│   │   ├── base_types.py    # Numeric/AnyStr/AnyDate/Dict и конкретные VO-базы
-│   │   ├── registry.py      # VOBaseTypesRegistry
-│   │   └── (sqlalchemy/, pydantic/ — отложенные extras, см. §11)
-│   ├── entities.py        # Entity, AggregateRoot
-│   ├── events.py          # DomainEvent
-│   ├── services.py        # DomainService
-│   ├── factories.py       # Factory (Protocol)
-│   ├── rules.py           # BusinessRule
-│   └── repositories.py    # порты репозиториев (Protocols)
-├── application/
-│   ├── __init__.py
-│   ├── commands.py        # Command, Query
-│   ├── handlers.py        # CommandHandler, QueryHandler (Protocols)
-│   ├── services.py        # ApplicationService
-│   ├── uow.py             # UnitOfWork (Protocol)
-│   ├── events.py          # EventPublisher (Protocol), InMemoryEventPublisher
-│   ├── dto.py             # DTO
-│   └── mappers.py         # Mapper (Protocol)
-├── infrastructure/
-│   ├── __init__.py
-│   ├── repositories.py    # InMemoryCrudRepository, ReadModelRepository
-│   ├── read_models.py     # ReadModel
-│   └── connectors.py      # Connector (Protocol)
-└── presentation/
-    ├── __init__.py
-    ├── cli.py             # порт CLI
-    ├── http.py            # порты Request/Response/Router
-    └── graphql.py         # порт Resolver
+packages/
+├── yaddd/                    # ядро, дистрибутив `yaddd` (нулевые зависимости)
+│   ├── pyproject.toml
+│   ├── src/yaddd/
+│   │   ├── __init__.py          # публичный реэкспорт + __all__
+│   │   ├── py.typed
+│   │   ├── testing.py           # контрактные наборы тестов портов (§12)
+│   │   ├── exceptions.py        # иерархия исключений (§10)
+│   │   ├── shared/
+│   │   │   ├── specification.py # Specification + комбинаторы
+│   │   │   └── dataclasses.py   # DataclassMixin/FrozenDataclassMixin (PEP 681)
+│   │   ├── domain/
+│   │   │   ├── value_object/    # ValueObject, базовые типы, реестр
+│   │   │   ├── entities.py      # Entity, AggregateRoot
+│   │   │   ├── events.py        # DomainEvent
+│   │   │   ├── services.py      # DomainService
+│   │   │   ├── factories.py     # Factory (Protocol)
+│   │   │   ├── rules.py         # BusinessRule
+│   │   │   └── repositories.py  # порты репозиториев (Protocols)
+│   │   ├── application/
+│   │   │   ├── commands.py      # Command, Query
+│   │   │   ├── handlers.py      # CommandHandler, QueryHandler (Protocols)
+│   │   │   ├── services.py      # ApplicationService
+│   │   │   ├── uow.py           # UnitOfWork (Protocol)
+│   │   │   ├── events.py        # EventPublisher (Protocol), InMemoryEventPublisher
+│   │   │   ├── dto.py           # DTO
+│   │   │   └── mappers.py       # Mapper (Protocol)
+│   │   ├── infrastructure/
+│   │   │   ├── repositories.py  # InMemoryCrudRepository, ReadModelRepository
+│   │   │   ├── read_models.py   # ReadModel
+│   │   │   └── connectors.py    # Connector (Protocol)
+│   │   └── presentation/
+│   │       ├── cli.py           # порт CLI
+│   │       ├── http.py          # порты Request/Response/Router
+│   │       └── graphql.py       # порт Resolver
+│   └── tests/
+└── yaddd-sqlalchemy/         # плагин, дистрибутив `yaddd-sqlalchemy` (§12)
+    ├── pyproject.toml        # dependencies: yaddd>=0.1, sqlalchemy[asyncio]>=2.0
+    ├── src/yaddd_sqlalchemy/
+    │   ├── __init__.py          # публичный реэкспорт + __all__
+    │   ├── py.typed
+    │   ├── repositories.py      # SqlCrudRepository (§8.1)
+    │   ├── uow.py               # SqlUnitOfWork (§8.2)
+    │   └── value_objects.py     # VOTypeDecorator
+    └── tests/                # контрактные + интеграционные тесты (aiosqlite)
 ```
 
 Каждый модуль объявляет `__all__`; корневой `__init__.py` реэкспортирует
 публичную поверхность так, чтобы одного `from yaddd import ...` хватало
-для типового использования.
+для типового использования. `yaddd.testing` в публичный реэкспорт не входит —
+это test-only модуль для тестовых наборов ядра и плагинов.
 
 ## 6. Domain layer
 
@@ -360,8 +370,8 @@ class UnitOfWork(Protocol):
   репозитории создаются поверх сессии UoW и **не коммитят сами**;
 - выход из контекста без `commit()` = rollback; исключение внутри
   контекста = rollback;
-- в ядре только Protocol; реализации — в infrastructure
-  (`SqlUnitOfWork` в extra `sqlalchemy`).
+- в ядре только Protocol; реализации — в плагинах
+  (`SqlUnitOfWork` в дистрибутиве `yaddd-sqlalchemy`, §8.2).
 
 ### 7.5 EventPublisher
 
@@ -419,9 +429,13 @@ class Mapper[D, T: AggregateRoot](Protocol):
   (§6.9) в ядре: для тестов, прототипов и простых приложений; `create`
   вставляет или заменяет, `update` требует существования записи
   (`EntityNotFoundError`), `delete` идемпотентен.
-- Отложено до extras: `SqlRepository[T]` над SQLAlchemy `AsyncSession`,
-  `HttpRepository[T]` поверх внешних HTTP-сервисов, connector-based ABC
-  (база, хранящая `Connector`) — появятся вместе с первым реальным
+- `SqlCrudRepository[T]` — реализация на SQLAlchemy Core в плагине
+  `yaddd-sqlalchemy` (§12): подкласс объявляет `table: ClassVar[Table]` и
+  маппинг `to_domain(row)` / `to_row(instance)`; `get` — по первичному ключу,
+  `read` — equality-фильтры из dict + offset/limit из `slice`, `update`
+  бросает `EntityNotFoundError` при отсутствии записи, `delete` идемпотентен.
+- Отложено: `HttpRepository[T]` поверх внешних HTTP-сервисов, connector-based
+  ABC (база, хранящая `Connector`) — появятся вместе с первым реальным
   потребителем, чтобы не плодить мёртвый код.
 
 Каждый репозиторий работает ровно с одним агрегатом.
@@ -432,9 +446,10 @@ class Mapper[D, T: AggregateRoot](Protocol):
 
 ### 8.2 UnitOfWork implementations
 
-- Отложено до extra `sqlalchemy`: `SqlUnitOfWork` поверх `AsyncSession`;
-  `commit()` → `session.commit()`, `rollback()`/`__aexit__` при исключении →
-  `session.rollback()`;
+- `SqlUnitOfWork` — реализация в плагине `yaddd-sqlalchemy` поверх
+  `AsyncSession`: `commit()` → `session.commit()`; `rollback()`/
+  `__aexit__` без коммита или при исключении → `session.rollback()`;
+  сессия закрывается на выходе из контекста;
 - ядро реализаций не содержит — только Protocol из §7.4.
 
 ### 8.3 ReadModel
@@ -468,11 +483,12 @@ class Connector(Protocol):
 ## 9. Presentation layer (entrypoints)
 
 Ядро определяет только порты и нейтральные типы запрос/ответ; адаптеры к
-конкретным фреймворкам — вне ядра (опциональные extras или код приложения).
+конкретным фреймворкам — вне ядра (дистрибутивы-плагины, §12, или код
+приложения).
 
 - **CLI**: `CliCommand` (Protocol) — `run(args) -> int` (exit code);
   нейтрален к argparse/click/typer. `run` синхронный намеренно: entrypoint
-  владеет event loop (`asyncio.run(...)` внутри), см. ADR-4 (§13).
+  владеет event loop (`asyncio.run(...)` внутри), см. ADR-4 (§14).
 - **HTTP**: нейтральные `HttpRequest`/`HttpResponse` (dataclass: method, path,
   headers, body / status, headers, body) + `HttpHandler` (Protocol:
   `async def handle(request) -> HttpResponse`). Адаптер к FastAPI/aiohttp
@@ -504,21 +520,47 @@ YadddError
 - бросаем максимально специфичный подкласс; контекст — через `add_note()`,
   причинную цепочку — через `raise ... from ...`.
 
-## 11. Опциональные интеграции (extras)
+## 11. Опциональные интеграции (дистрибутивы-плагины)
 
-| Extra        | Что даёт                                             | Требование |
-|--------------|------------------------------------------------------|------------|
-| `sqlalchemy` | type decorators для ValueObject, `SqlRepository`, `SqlUnitOfWork` | ленивый импорт; ядро не импортирует sqlalchemy |
+Интеграции с внешними библиотеками — отдельные дистрибутивы в uv workspace
+(§12), а не extras ядра:
 
-Отложено до будущих версий: extra `pydantic` (валидаторы Pydantic для
+| Дистрибутив       | Импортное имя      | Что даёт |
+|-------------------|--------------------|----------|
+| `yaddd-sqlalchemy` | `yaddd_sqlalchemy` | `SqlCrudRepository` (§8.1), `SqlUnitOfWork` (§8.2), `VOTypeDecorator` (type decorator для ValueObject) |
+
+Отложено до будущих версий: интеграция `pydantic` (валидаторы Pydantic для
 ValueObject, typed settings) — была удалена из v0.1 и вернётся с более
-осознанным дизайном интеграции.
+осознанным дизайном, тоже отдельным дистрибутивом.
 
 Правило: `pip install yaddd` никогда не тянет сторонних пакетов;
 импорт ядра никогда не падает из-за отсутствия optional-зависимости —
-модуль интеграции бросает `ImportError` с подсказкой `pip install yaddd[...]`.
+зависимости объявлены в дистрибутиве плагина, а не в ядре.
 
-## 12. Требования к качеству
+## 12. Плагины
+
+Модель расширения ядра:
+
+- **Отдельные дистрибутивы в uv workspace.** Каждый плагин — свой пакет в
+  `packages/*` со своим `pyproject.toml`, версией и зависимостями. Корневой
+  `pyproject.toml` виртуальный и служит точкой сборки workspace
+  (`uv sync` ставит всё: ядро, плагины, dependency-groups).
+- **Соседние импортные имена.** Плагин `yaddd-<x>` экспортирует пакет
+  `yaddd_<x>` (например, `yaddd_sqlalchemy`) — без namespace-пакетов и без
+  встраивания в `yaddd.*`.
+- **Явная сборка (explicit wiring).** Плагины инстанцируются в composition
+  root приложения: никакого auto-discovery, entry points и реестров —
+  зависимость видна в коде и в `pyproject.toml` потребителя.
+- **Контрактные тесты как исполняемая спецификация портов.** Модуль
+  `yaddd.testing` (test-only) содержит базовые наборы `CrudRepositoryContract`
+  и `UnitOfWorkContract`: плагин наследует класс в своей тестовой suite,
+  переопределяет фикстуры и доказывает соответствие порту. Тот же механизм
+  доступен сторонним плагинам.
+- **Пиновка версии ядра.** Плагин зависит от `yaddd>=x` (в workspace —
+  через `[tool.uv.sources] yaddd = { workspace = true }`) и выпускается
+  независимо, со своей версией.
+
+## 13. Требования к качеству
 
 - **Типизация**: каждый публичный символ аннотирован; проходят `mypy --strict`
   и `pyright`; `py.typed` включён в wheel; PEP 695 generics
@@ -529,12 +571,13 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
   `pytest.raises(..., match=...)` для контрактов исключений; фейковые
   реализации Protocols вместо моков внутренностей.
 - **Гейты перед завершением изменения**: `ruff check . && ruff format --check .`
-  `&& mypy src && pyright src && pytest`.
+  `&& mypy && pyright && pytest` (конфигурация mypy/pyright покрывает оба
+  пакета workspace; pytest собирает `packages/*/tests`).
 - **Стиль**: keyword-only аргументы для функций с >1 параметром и всех bool;
   `slots=True` в dataclass'ах; без метаклассов — поведение выражается
   наследованием (напр., `SensitiveValueObject` вместо мета-флага).
 
-## 13. Протокол архитектурных решений
+## 14. Протокол архитектурных решений
 
 Все открытые вопросы закрыты (2026-10-03):
 
@@ -554,9 +597,9 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
    (`asyncio.run(main())`); см. §4. Sync-порты, если появится спрос,
    добавятся отдельным модулем без ломки существующих.
 
-## 14. Глоссарий DDD-терминов
+## 15. Глоссарий DDD-терминов
 
-### 14.1 Domain layer
+### 15.1 Domain layer
 
 | Термин | Определение | В yaddd |
 |--------|-------------|---------|
@@ -573,7 +616,7 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
 | Primary Key (идентификатор) | Значение идентичности сущности: `UUID \| int \| str` | `PrimaryKey` TypeVar, `Entity.pk` |
 | Ubiquitous Language (единый язык) | Словарь, общий для кода и предметной области; имена классов повторяют термины домена | этот глоссарий + именование публичного API |
 
-### 14.2 Application layer
+### 15.2 Application layer
 
 | Термин | Определение | В yaddd |
 |--------|-------------|---------|
@@ -589,19 +632,19 @@ ValueObject, typed settings) — была удалена из v0.1 и вернё
 | Event Handler (обработчик события) | Реакция на доменное событие; подписывается на тип события | подписки `InMemoryEventPublisher.subscribe` |
 | Port (порт) | Интерфейс, объявленный внутренним слоем, реализуемый внешним | Protocols репозиториев/коннекторов |
 
-### 14.3 Infrastructure layer
+### 15.3 Infrastructure layer
 
 | Термин | Определение | В yaddd |
 |--------|-------------|---------|
-| Repository implementation | Реализация порта репозитория под конкретное хранилище | `InMemoryCrudRepository` (ядро); `SqlRepository`, `HttpRepository` — отложенные extras |
-| Unit of Work implementation | Реализация порта UoW поверх конкретной сессии/клиента | `SqlUnitOfWork` (отложенный extra `sqlalchemy`) |
+| Repository implementation | Реализация порта репозитория под конкретное хранилище | `InMemoryCrudRepository` (ядро); `SqlCrudRepository` — плагин `yaddd-sqlalchemy`; `HttpRepository` — отложено |
+| Unit of Work implementation | Реализация порта UoW поверх конкретной сессии/клиента | `SqlUnitOfWork` — плагин `yaddd-sqlalchemy` |
 | Read Model (модель чтения) | Денормализованная проекция, оптимизированная под запросы; минует агрегаты | `ReadModel`, `infrastructure/read_models.py` |
 | Read Model Repository | Доступ «только чтение» к read models | `ReadModelRepository[M]` (Protocol) |
 | Connector (коннектор) | Абстракция над источником данных: БД-сессия, HTTP-клиент | `Connector` (Protocol), `HttpConnector` |
 | Anti-Corruption Layer (ACL) | Прослойка, защищающая домен от чужой модели (внешний API, legacy) | мапперы + `HttpRepository` как точка адаптации |
 | Persistence Ignorance | Домен не знает о деталях хранения | порты в domain, реализации в infrastructure |
 
-### 14.4 Entrypoints (presentation layer)
+### 15.4 Entrypoints (presentation layer)
 
 | Термин | Определение | В yaddd |
 |--------|-------------|---------|
