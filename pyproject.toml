@@ -15,8 +15,8 @@ testing-extra = [
     "aiosqlite",
 ]
 typechecking = [
-    "mypy",
     "pyright>=1.1.392",
+    "ty>=0.0.84",
 ]
 all = [
   { include-group = 'dev' },
@@ -27,11 +27,16 @@ all = [
 ]
 
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/*", "packages/yaddd-linter"]
+# The template is a self-contained skeleton meant to be copied out of this repo,
+# so it resolves yaddd from PyPI instead of joining the workspace and its lock.
+exclude = ["packages/yaddd-template"]
 
 [tool.ruff]
 line-length = 120
-extend-exclude = ["skills", "src_old", "dist"]
+# yaddd-template is a standalone project that only lives here for convenience:
+# it brings its own tooling config and must not be linted by the library rules.
+extend-exclude = ["skills", "src_old", "dist", "packages/yaddd-template"]
 
 [tool.ruff.lint]
 exclude = [
@@ -70,7 +75,7 @@ lines-after-imports = 2
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests", "packages/yaddd-pydantic/tests"]
+testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests", "packages/yaddd-pydantic/tests", "packages/yaddd-linter/tests"]
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "-s -v -p no:warnings -m 'not with_db'"
 env_override_existing_values = 1
@@ -84,16 +89,13 @@ markers = [
     "with_db: mark a test that require database",
 ]
 
-[tool.mypy]
-python_version = "3.12"
-strict = true
-mypy_path = "packages/yaddd/src:packages/yaddd-sqlalchemy/src:packages/yaddd-pydantic/src"
-packages = ["yaddd", "yaddd_sqlalchemy", "yaddd_pydantic"]
+[tool.ty.environment]
+python-version = "3.12"
 
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
-include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src", "packages/yaddd-pydantic/src"]
+include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src", "packages/yaddd-pydantic/src", "packages/yaddd-linter/src"]
 executionEnvironments = [
     { root = "packages/yaddd", extraPaths = ["src"] },
     { root = "packages/yaddd-sqlalchemy", extraPaths = ["src", "../yaddd/src"] },

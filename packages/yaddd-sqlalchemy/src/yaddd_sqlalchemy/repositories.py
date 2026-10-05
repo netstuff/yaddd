@@ -10,7 +10,7 @@ from yaddd.domain.entities import AggregateRoot, PrimaryKey
 from yaddd.domain.repositories import CrudRepository
 from yaddd.exceptions import EntityNotFoundError
 
-from yaddd_sqlalchemy.session import SqlSession, SqlTransaction
+from yaddd_sqlalchemy.session import SqlTransaction
 
 
 __all__ = ["SqlCrudRepository", "SqlTransactionBoundRepository"]
@@ -41,7 +41,11 @@ class SqlCrudRepository[T: AggregateRoot](CrudRepository[T], ABC):
     table: ClassVar[Table]
 
     def __init__(self, session: AsyncSession) -> None:
-        self._session = session
+        self._async_session = session
+
+    @property
+    def _session(self) -> AsyncSession:
+        return self._async_session
 
     @abstractmethod
     def to_domain(self, row: Row[Any]) -> T:

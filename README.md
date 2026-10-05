@@ -121,7 +121,7 @@ after `commit()` — see [SPEC.md](SPEC.md) for the layer contracts.
 uv sync                     # installs the workspace and all dependency groups
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy
+uv run ty check packages/*/src
 uv run pyright
 uv run pytest
 ```
