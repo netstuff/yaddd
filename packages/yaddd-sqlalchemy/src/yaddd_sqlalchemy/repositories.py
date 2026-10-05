@@ -10,8 +10,10 @@ from yaddd.domain.entities import AggregateRoot, PrimaryKey
 from yaddd.domain.repositories import CrudRepository
 from yaddd.exceptions import EntityNotFoundError
 
+from yaddd_sqlalchemy.session import SqlSession, SqlTransaction
 
-__all__ = ["SqlCrudRepository"]
+
+__all__ = ["SqlCrudRepository", "SqlTransactionBoundRepository"]
 
 
 class SqlCrudRepository[T: AggregateRoot](CrudRepository[T], ABC):
@@ -85,3 +87,30 @@ class SqlCrudRepository[T: AggregateRoot](CrudRepository[T], ABC):
 
     async def delete(self, pk: PrimaryKey) -> None:
         await self._session.execute(delete(self.table).where(self._pk_column == pk))
+
+
+class SqlTransactionBoundRepository[T: AggregateRoot](SqlCrudRepository[T], ABC):
+    """SQLAlchemy repository bound to a ``SqlTransaction``.
+
+    The SQLAlchemy session is resolved lazily from the active transaction, so
+    the repository can be constructed before the transaction context is
+    entered. Created and updated aggregates are automatically tracked for
+    event publication on commit.
+    """
+
+    def __init__(self, transaction: SqlTransaction) -> None:
+        self._transaction = transaction
+
+    @property
+    def _session(self) -> AsyncSession:
+        return self._transaction.session.session
+
+    async def create(self, instance: T) -> T:
+        result = await super().create(instance)
+        self._transaction.track(instance)
+        return result
+
+    async def update(self, instance: T) -> T:
+        result = await super().update(instance)
+        self._transaction.track(instance)
+        return result

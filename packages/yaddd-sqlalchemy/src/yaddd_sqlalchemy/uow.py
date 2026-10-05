@@ -1,28 +1,43 @@
-"""``UnitOfWork`` implementation over a SQLAlchemy ``AsyncSession``."""
+"""``UnitOfWork`` implementation over a SQLAlchemy transaction."""
 
 from types import TracebackType
-from typing import Self
+from typing import Self, TypeVar
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from yaddd.application.uow import UnitOfWork
+from yaddd.domain.entities import AggregateRoot
 
+from yaddd_sqlalchemy.session import SqlTransaction
+
+
+R = TypeVar("R")
 
 __all__ = ["SqlUnitOfWork"]
 
 
-class SqlUnitOfWork(UnitOfWork):
-    """Transactional boundary over a single ``AsyncSession``.
+class SqlUnitOfWork[R](UnitOfWork[R]):
+    """Unit of work over a single SQLAlchemy transaction.
 
-    ``commit()`` flushes and commits the session. Leaving the context without
-    a commit — or with an exception — rolls back; the session is always
-    closed on exit.
+    Repositories in ``repos`` share the underlying ``SqlTransaction``.
+    ``commit()`` persists the work and publishes domain events from tracked
+    aggregates. Exiting the context without ``commit()`` — or with an
+    exception — rolls back.
     """
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._committed = False
+    def __init__(self, transaction: SqlTransaction, repos: R) -> None:
+        self._transaction = transaction
+        self._repos = repos
+
+    @property
+    def repos(self) -> R:
+        """Repository bundle used within this unit of work."""
+        return self._repos
+
+    def track(self, aggregate: AggregateRoot) -> None:
+        """Register an aggregate whose events should be published on commit."""
+        self._transaction.track(aggregate)
 
     async def __aenter__(self) -> Self:
+        await self._transaction.__aenter__()
         return self
 
     async def __aexit__(
@@ -31,17 +46,12 @@ class SqlUnitOfWork(UnitOfWork):
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        try:
-            if exc_type is not None or not self._committed:
-                await self.rollback()
-        finally:
-            await self._session.close()
+        await self._transaction.__aexit__(exc_type, exc_value, traceback)
 
     async def commit(self) -> None:
-        """Persist all changes made within the unit of work."""
-        await self._session.commit()
-        self._committed = True
+        """Persist all tracked changes and publish domain events."""
+        await self._transaction.commit()
 
     async def rollback(self) -> None:
-        """Discard all changes made within the unit of work."""
-        await self._session.rollback()
+        """Discard all tracked changes."""
+        await self._transaction.rollback()

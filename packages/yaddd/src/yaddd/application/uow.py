@@ -1,19 +1,34 @@
 """Unit of Work port."""
 
 from types import TracebackType
-from typing import Protocol, Self
+from typing import Protocol, Self, TypeVar
 
+from yaddd.domain.entities import AggregateRoot
+
+
+R = TypeVar("R")
 
 __all__ = ["UnitOfWork"]
 
 
-class UnitOfWork(Protocol):
-    """Transactional boundary of a use case: load -> modify -> save.
+class UnitOfWork[R](Protocol):
+    """Coordinates changes to multiple aggregates within one business operation.
 
-    Repositories are created over the unit of work's session and never
-    commit themselves. Leaving the context without ``commit()`` — or with an
+    Repositories are obtained through ``repos`` and share the same
+    transactional boundary. Aggregates whose events must be published on
+    commit are tracked explicitly via ``track`` (usually by repositories
+    themselves). Exiting the context without ``commit()`` — or with an
     exception — means rollback.
     """
+
+    @property
+    def repos(self) -> R:
+        """Repository bundle used within this unit of work."""
+        ...
+
+    def track(self, aggregate: AggregateRoot) -> None:
+        """Register an aggregate whose events should be published on commit."""
+        ...
 
     async def __aenter__(self) -> Self: ...
 
@@ -25,7 +40,7 @@ class UnitOfWork(Protocol):
     ) -> None: ...
 
     async def commit(self) -> None:
-        """Persist all changes made within the unit of work."""
+        """Persist all tracked changes and publish domain events."""
 
     async def rollback(self) -> None:
-        """Discard all changes made within the unit of work."""
+        """Discard all tracked changes."""
