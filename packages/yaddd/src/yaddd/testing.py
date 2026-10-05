@@ -148,7 +148,7 @@ class UnitOfWorkContract:
     """
 
     @pytest.fixture
-    def uow(self) -> UnitOfWork:
+    def uow(self) -> UnitOfWork[Any]:
         """A fresh unit of work under test."""
         raise NotImplementedError
 
@@ -157,16 +157,16 @@ class UnitOfWorkContract:
         """Optional hook verifying rollback after an exceptional exit."""
         return None
 
-    async def test_context_manager_enter_and_exit(self, uow: UnitOfWork) -> None:
+    async def test_context_manager_enter_and_exit(self, uow: UnitOfWork[Any]) -> None:
         async with uow:
             pass
 
-    async def test_commit_completes(self, uow: UnitOfWork) -> None:
+    async def test_commit_completes(self, uow: UnitOfWork[Any]) -> None:
         async with uow:
             await uow.commit()
 
     async def test_exception_inside_context_propagates(
-        self, uow: UnitOfWork, assert_rolled_back: Callable[[], Awaitable[None]] | None
+        self, uow: UnitOfWork[Any], assert_rolled_back: Callable[[], Awaitable[None]] | None
     ) -> None:
         with pytest.raises(RuntimeError, match="boom"):
             async with uow:
