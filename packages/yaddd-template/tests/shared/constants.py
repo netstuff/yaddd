@@ -1,0 +1,30 @@
+"""Shared test data and identifiers."""
+
+__all__ = [
+    "API_PROCESS_NAME",
+    "TEST_BASE_URL",
+    "TEST_BROKER_CHANNEL",
+    "TEST_CARD_TOKEN",
+    "TEST_CHECK_EXPLODING",
+    "TEST_CHECK_SLOW",
+    "TEST_CHECK_WORKING",
+    "TEST_DB_FILENAME",
+    "TEST_REFERENCE",
+    "TEST_TOTAL",
+    "UNREACHABLE_BROKER_URL",
+]
+
+
+API_PROCESS_NAME = "api"
+
+
+TEST_BASE_URL = "http://testserver"
+TEST_BROKER_CHANNEL = "domain-events"
+TEST_CARD_TOKEN = "tok_live_4242"
+TEST_DB_FILENAME = "test.db"
+TEST_REFERENCE = "ORD-1A2B3C4D"
+TEST_TOTAL = 1999
+TEST_CHECK_EXPLODING = "exploding"
+TEST_CHECK_SLOW = "slow"
+TEST_CHECK_WORKING = "working"
+UNREACHABLE_BROKER_URL = "redis://127.0.0.1:1/0"

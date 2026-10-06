@@ -1,0 +1,140 @@
+# Application skeleton: the package is `app/` at the project root, so imports
+# read `app.*` and the import root is `.` (`pythonpath = ["."]` below makes it
+# importable in-tree; the wheel installs it as the top-level `app` package).
+
+[project]
+name = "yaddd-template"
+version = "0.1.0"
+description = "Web application skeleton built on yaddd, yaddd-sqlalchemy and yaddd-pydantic."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "yaddd contributors" }]
+keywords = ["ddd", "fastapi", "faststream", "sqlalchemy", "template"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+dependencies = [
+    # sqlite is the default database: the driver is a runtime dependency,
+    # not a test one, so the Docker image works with no services.
+    "aiosqlite>=0.20",
+    "yaddd>=0.3",
+    "yaddd-pydantic>=0.1",
+    "yaddd-sqlalchemy>=0.1",
+    "fastapi>=0.115",
+    "faststream[redis]>=0.6",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "redis>=5.2",
+    "sqlalchemy[asyncio]>=2.0",
+    "uvicorn>=0.32",
+]
+
+[project.scripts]
+api = "app.presentation.api.asgi:main"
+broker = "app.presentation.worker.broker:main"
+worker = "app.presentation.worker.cli:main"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+]
+linting = [
+    "ruff>=0.8",
+]
+typechecking = [
+    "pyright>=1.1.392",
+    "ty>=0.0.84",
+]
+all = [
+    { include-group = "dev" },
+    { include-group = "linting" },
+    { include-group = "typechecking" },
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "S",  # flake8-bandit
+    "C4",  # flake8-comprehensions
+    "T10",  # flake8-debugger
+    "ERA",  # flake8-eradicate
+    "G",  # flake8-logging-format
+    "PT",  # flake8-pytest-style
+    "Q",  # flake8-quotes
+    "UP",  # pyupgrade
+]
+ignore = [
+    "D",  # docstrings are a style choice, not a rule
+    "FBT",  # positional booleans
+    "EM",  # exception message literals
+    "TRY003",  # long exception messages
+    "G004",  # f-strings in logging
+    "C408",  # dict() calls
+    "S104",  # 0.0.0.0 bind address: required to listen inside a container
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["app"]
+lines-after-imports = 2
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+# Constant modules name columns, arguments and test data; the strings are identifiers, not secrets.
+"app/**/constants.py" = ["S105"]
+"tests/shared/constants.py" = ["S105"]
+# Tests assert, mock private names and read fixture internals on purpose.
+"tests/**" = ["S101", "SLF001", "ARG", "PLR2004"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --strict-markers --strict-config"
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[[tool.ty.overrides]]
+include = ["app/**/*.py", "tests/**/*.py"]
+rules = { "unknown-argument" = "ignore" }
+
+[[tool.ty.overrides]]
+include = ["tests/integration/test_broker.py", "tests/contract/test_contracts.py"]
+rules = { "invalid-argument-type" = "ignore" }
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["app", "tests"]
+# Redis stubs expose partially-unknown kwargs; suppress rather than add inline pragmas.
+reportUnknownMemberType = "none"
+executionEnvironments = [{ root = ".", reportCallIssue = "none" }]

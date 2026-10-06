@@ -1,0 +1,34 @@
+# Keep the build context small and the image free of local state.
+.git
+.github
+.gitignore
+.dockerignore
+
+# Environments
+.venv
+.env
+.env.*
+
+# Tooling caches
+.pytest_cache
+.ty
+.ruff_cache
+
+# Not needed at runtime. README.md and LICENSE must stay in the context:
+# pyproject.toml references them as package metadata.
+tests
+AGENTS.md
+Makefile
+
+# Local database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Editors and OS
+.idea
+.vscode
+.DS_Store
+__pycache__
+*.py[cod]
