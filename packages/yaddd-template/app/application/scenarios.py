@@ -24,10 +24,13 @@ from app.domain.orders.value_objects import CardToken, Money, OrderReference
 __all__ = [
     "MINIMUM_DISCOUNT_TOTAL",
     "DISCOUNT_RATE",
+    "ApplyDiscountAction",
+    "AmendOrderScenario",
     "NotifyCustomerScenario",
     "OrderScenarioState",
     "PlaceOrderResult",
     "PlaceOrderScenario",
+    "apply_discount_step",
 ]
 
 
@@ -72,6 +75,36 @@ def _notify_factory(context: Context[OrderScenarioState]) -> "NotifyCustomerScen
     )
 
 
+class ApplyDiscountAction:
+    """Encapsulated step logic: apply a discount when the total is high enough.
+
+    Keeping the action in a standalone callable makes it reusable across
+    scenarios. The orchestration (when to run it) is declared by the scenario;
+    the business rule lives here.
+    """
+
+    async def __call__(self, context: Context[OrderScenarioState]) -> OrderScenarioState:
+        order = context.state.order
+        if order is None:
+            return context.state
+        discounted_total = int(order.total.value * DISCOUNT_RATE)
+        context.state.order = Order(
+            id=order.id,
+            reference=order.reference,
+            total=Money(discounted_total),
+            status=order.status,
+            card_token=order.card_token,
+        )
+        return context.state
+
+
+apply_discount_step = step(
+    ApplyDiscountAction(),
+    name="apply_discount",
+    when=_should_apply_discount,
+)
+
+
 class PlaceOrderScenario(Scenario[OrderScenarioState]):
     """Place an order as a sequence of discrete, traceable steps."""
 
@@ -91,21 +124,7 @@ class PlaceOrderScenario(Scenario[OrderScenarioState]):
         )
         return context.state
 
-    @step(name="apply_discount", when=_should_apply_discount)
-    async def apply_discount(self, context: Context[OrderScenarioState]) -> OrderScenarioState:
-        """Apply a discount when the total exceeds the threshold."""
-        order = context.state.order
-        if order is None:
-            return context.state
-        discounted_total = int(order.total.value * DISCOUNT_RATE)
-        context.state.order = Order(
-            id=order.id,
-            reference=order.reference,
-            total=Money(discounted_total),
-            status=order.status,
-            card_token=order.card_token,
-        )
-        return context.state
+    apply_discount = apply_discount_step
 
     @step(name="charge_payment", when=_has_card_token)
     async def charge_payment(self, context: Context[OrderScenarioState]) -> OrderScenarioState:
@@ -137,6 +156,17 @@ class PlaceOrderScenario(Scenario[OrderScenarioState]):
     async def send_confirmation(self, context: Context[OrderScenarioState]) -> OrderScenarioState:
         """Hand control to the notification scenario after persistence."""
         return context.state
+
+
+class AmendOrderScenario(Scenario[OrderScenarioState]):
+    """Re-apply discount rules to an already built order.
+
+    Demonstrates that ``ApplyDiscountAction`` is not tied to the place-order
+    flow: the same callable step can be reused in any scenario that works with
+    the same context state.
+    """
+
+    apply_discount = apply_discount_step
 
 
 class NotifyCustomerScenario(Scenario[OrderScenarioState]):

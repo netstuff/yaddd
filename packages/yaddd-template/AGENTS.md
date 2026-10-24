@@ -49,6 +49,11 @@ Dependencies point inwards. `domain` knows nothing; `application` depends on
      mutable `Context` and may branch or skip steps conditionally.
   3. A `class` implementing `CommandHandler` only when the previous two shapes
      do not fit; this should be rare.
+- **Encapsulate step business logic in reusable callables.** A `Scenario` step
+  should be a thin adapter that delegates to a standalone callable — a function
+  or a class with `async def __call__`. The callable owns the actual business
+  logic and can be reused across scenarios and arranged in any order. Keep
+  scenario methods free of deep domain orchestration.
 - **`infrastructure/`** — SQLAlchemy Core tables and adapters, Redis broker,
   publisher, probes, settings, logging. Implements ports; never invents new
   vocabulary for the domain.

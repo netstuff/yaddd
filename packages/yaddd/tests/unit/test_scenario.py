@@ -425,3 +425,44 @@ async def test_metrics_are_collected():
     assert metrics.branches_total == 1
     assert metrics.total_duration_ms >= 0
 
+
+class AddTwoStep:
+    """Reusable business action: add two to the state."""
+
+    async def __call__(self, ctx: Context[int]) -> int:
+        return ctx.state + 2
+
+
+class MultiplyByThreeStep:
+    """Reusable business action: multiply the state by three."""
+
+    async def __call__(self, ctx: Context[int]) -> int:
+        return ctx.state * 3
+
+
+add_two = step(AddTwoStep())
+multiply_by_three = step(MultiplyByThreeStep())
+
+
+class AddThenMultiplyScenario(Scenario[int]):
+    add = add_two
+    multiply = multiply_by_three
+
+
+class MultiplyThenAddScenario(Scenario[int]):
+    multiply = multiply_by_three
+    add = add_two
+
+
+async def test_callable_step_can_be_reused_across_scenarios_and_orders():
+    """Steps encapsulated as callables are composable: the same action can be
+    reused in different scenarios and arranged in any order.
+    """
+    runner = build_runner()
+
+    add_then_mul = await runner.run([AddThenMultiplyScenario()], initial_state=0)
+    mul_then_add = await runner.run([MultiplyThenAddScenario()], initial_state=0)
+
+    assert add_then_mul == 6  # (0 + 2) * 3
+    assert mul_then_add == 2  # (0 * 3) + 2
+

@@ -18,12 +18,15 @@ from app.application.commands import PlaceOrder
 from app.application.dto import OrderDTO
 from app.application.notifications import NotificationSender
 from app.application.scenarios import (
+    DISCOUNT_RATE,
     MINIMUM_DISCOUNT_TOTAL,
+    AmendOrderScenario,
     OrderScenarioState,
     PlaceOrderScenario,
 )
 from app.application.uow import OrderRepositories
 from app.domain.orders.aggregates.order import Order
+from app.domain.orders.value_objects import Money, OrderReference
 from tests.shared.constants import TEST_CARD_TOKEN
 
 
@@ -174,3 +177,27 @@ class _FakeMapper(Mapper[OrderDTO, Order]):
 
     def to_domain(self, dto: OrderDTO) -> Order:
         raise NotImplementedError
+
+
+async def test_apply_discount_step_is_reusable_across_scenarios() -> None:
+    """The same callable step can be arranged in any scenario that shares the
+    same context state, not only in the one where it was first declared.
+    """
+    notifier = FakeNotificationSender()
+    command = PlaceOrder(reference="ORD-1234ABCD", total=MINIMUM_DISCOUNT_TOTAL)
+    order = Order(
+        id=UUID("12345678-1234-5678-1234-567812345678"),
+        reference=OrderReference("ORD-1234ABCD"),
+        total=Money(MINIMUM_DISCOUNT_TOTAL),
+    )
+    state = OrderScenarioState(command=command, notifier=notifier, order=order)
+
+    result_state = await ScenarioRunner[OrderScenarioState]().run(
+        [AmendOrderScenario()],
+        initial_state=state,
+    )
+
+    assert result_state.order is not None
+    assert result_state.order.total.value == int(MINIMUM_DISCOUNT_TOTAL * DISCOUNT_RATE)
+    assert any(s.name == "apply_discount" for s in PlaceOrderScenario(uow=_FakeUow(), mapper=_FakeMapper()).steps)
+    assert any(s.name == "apply_discount" for s in AmendOrderScenario().steps)
