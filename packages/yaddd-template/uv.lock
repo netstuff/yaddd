@@ -637,7 +637,7 @@ wheels = [
 
 [[package]]
 name = "yaddd"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "../yaddd" }
 
 [[package]]
@@ -668,7 +668,7 @@ wheels = [
 
 [[package]]
 name = "yaddd-template"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },

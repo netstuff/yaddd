@@ -11,6 +11,33 @@ carrying the workflow state and may:
 
 Steps can be skipped declaratively via ``when``. The runner detects scenario
 cycles at runtime by tracking visited scenario names in the context.
+
+Examples:
+    >>> from yaddd import (
+    ...     Argument,
+    ...     Context,
+    ...     Scenario,
+    ...     ScenarioRunner,
+    ...     State,
+    ...     Variable,
+    ...     step,
+    ... )
+
+    >>> class OrderState(State):
+    ...     user_id: int = Argument()
+    ...     order_id: str = Argument(validate=str)
+    ...     total: float = Variable(default=0.0)
+
+    >>> class PlaceOrder(Scenario[OrderState]):
+    ...     @step
+    ...     async def add_tax(self, ctx: Context[OrderState]) -> None:
+    ...         ctx.state.total *= 1.2
+
+    >>> async def main() -> OrderState:
+    ...     return await ScenarioRunner().run(
+    ...         [PlaceOrder()],
+    ...         initial_state=OrderState(user_id=1, order_id="abc"),
+    ...     )
 """
 
 from collections.abc import Awaitable, Callable, Sequence

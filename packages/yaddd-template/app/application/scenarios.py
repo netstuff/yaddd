@@ -6,10 +6,9 @@ branch to another scenario. Dependencies arrive through the constructor — the
 composition root wires repositories, the unit of work and notification ports.
 """
 
-from dataclasses import dataclass
 from uuid import uuid4
 
-from yaddd import Scenario, step
+from yaddd import Argument, Scenario, State, Variable, step
 from yaddd.application.handlers import Context, Skip
 
 from app.application.commands import PlaceOrder
@@ -38,8 +37,7 @@ MINIMUM_DISCOUNT_TOTAL = 10000
 DISCOUNT_RATE = 0.9
 
 
-@dataclass(kw_only=True, slots=True)
-class OrderScenarioState:
+class OrderScenarioState(State):
     """Mutable state carried through the place-order scenario.
 
     The state deliberately mixes the incoming command, the domain aggregate
@@ -47,11 +45,11 @@ class OrderScenarioState:
     a domain object: it is an execution scratchpad owned by the scenario runner.
     """
 
-    command: PlaceOrder
-    notifier: NotificationSender
-    order: Order | None = None
-    charged: bool = False
-    notification_sent: bool = False
+    command: PlaceOrder = Argument()
+    notifier: NotificationSender = Argument()
+    order: Order | None = Variable(default=None)
+    charged: bool = Variable(default=False)
+    notification_sent: bool = Variable(default=False)
 
 
 type PlaceOrderResult = OrderDTO
