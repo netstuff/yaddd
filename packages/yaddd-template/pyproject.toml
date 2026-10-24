@@ -4,7 +4,7 @@
 
 [project]
 name = "yaddd-template"
-version = "0.1.0"
+version = "0.2.0"
 description = "Web application skeleton built on yaddd, yaddd-sqlalchemy and yaddd-pydantic."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -25,7 +25,7 @@ dependencies = [
     # sqlite is the default database: the driver is a runtime dependency,
     # not a test one, so the Docker image works with no services.
     "aiosqlite>=0.20",
-    "yaddd>=0.3",
+    "yaddd>=0.4",
     "yaddd-pydantic>=0.1",
     "yaddd-sqlalchemy>=0.1",
     "fastapi>=0.115",
@@ -138,3 +138,6 @@ include = ["app", "tests"]
 # Redis stubs expose partially-unknown kwargs; suppress rather than add inline pragmas.
 reportUnknownMemberType = "none"
 executionEnvironments = [{ root = ".", reportCallIssue = "none" }]
+
+[tool.uv.sources]
+yaddd = { path = "../yaddd", editable = true }

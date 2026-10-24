@@ -42,7 +42,7 @@ class WorkerPath:
 class WorkerTitle:
     """Metadata of the worker AsyncAPI document."""
 
-    VERSION = "0.1.0"
+    VERSION = "0.2.0"
     DESCRIPTION = "Domain event consumers of this worker."
 
 

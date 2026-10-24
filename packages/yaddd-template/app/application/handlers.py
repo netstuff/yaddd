@@ -4,18 +4,22 @@ A handler loads aggregates through repository ports, calls domain methods,
 commits, and only then lets the unit of work publish the events collected on
 those aggregates. Dependencies arrive through the constructor — explicit DI,
 no container, no service locator.
+
+``PlaceOrderHandler`` now delegates to a declarative :class:`Scenario` so the
+workflow steps (build, optional discount, optional payment, place, persist,
+notify) are visible as first-class methods instead of hiding inside one
+monolithic ``execute`` body.
 """
 
-from uuid import uuid4
-
-from yaddd import ApplicationService, EntityNotFoundError, command_handler
+from yaddd import ApplicationService, EntityNotFoundError, ScenarioRunner, command_handler
 
 from app.application.commands import MarkOrderPaid, PlaceOrder
 from app.application.dto import OrderDTO
 from app.application.mappers import OrderMapper
+from app.application.notifications import NotificationSender
+from app.application.scenarios import OrderScenarioState, PlaceOrderScenario
 from app.application.uow import OrderUnitOfWork
 from app.domain.orders.aggregates.order import Order
-from app.domain.orders.value_objects import CardToken, Money, OrderReference
 
 
 __all__ = ["MarkOrderPaidHandler", "PlaceOrderHandler"]
@@ -23,24 +27,26 @@ __all__ = ["MarkOrderPaidHandler", "PlaceOrderHandler"]
 
 @command_handler(PlaceOrder)
 class PlaceOrderHandler(ApplicationService[PlaceOrder, OrderDTO]):
-    """Creates an order, accepts it and publishes ``OrderPlaced`` on commit."""
+    """Creates an order, accepts it and publishes ``OrderPlaced`` on commit.
 
-    def __init__(self, uow: OrderUnitOfWork, mapper: OrderMapper) -> None:
+    The actual workflow lives in :class:`PlaceOrderScenario`; this handler is a
+    thin adapter that turns a command into the scenario's initial state and
+    runs it through a :class:`ScenarioRunner`.
+    """
+
+    def __init__(self, uow: OrderUnitOfWork, mapper: OrderMapper, notifier: NotificationSender) -> None:
         self._uow = uow
         self._mapper = mapper
+        self._notifier = notifier
 
     async def execute(self, command: PlaceOrder) -> OrderDTO:
-        order = Order(
-            id=uuid4(),
-            reference=OrderReference(command.reference),
-            total=Money(command.total),
-            card_token=CardToken(command.card_token) if command.card_token is not None else None,
-        )
-        order.place()
+        runner = ScenarioRunner[OrderScenarioState]()
+        state = OrderScenarioState(command=command, notifier=self._notifier)
+        await runner.run([PlaceOrderScenario(self._uow, self._mapper)], initial_state=state)
 
-        async with self._uow:
-            await self._uow.repos.orders.create(order)
-            await self._uow.commit()
+        order = state.order
+        if order is None:
+            raise RuntimeError("PlaceOrderScenario finished without creating an order")
 
         return self._mapper.to_dto(order)
 

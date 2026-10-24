@@ -21,9 +21,11 @@ from app.application.dto import OrderDTO
 from app.application.handlers import MarkOrderPaidHandler, PlaceOrderHandler
 from app.application.health import HealthProbe
 from app.application.mappers import OrderMapper
+from app.application.notifications import NotificationSender
 from app.application.projections import OrderPlacedProjector
 from app.application.read_models import OrderPlacementRepository
 from app.application.uow import OrderUnitOfWork
+from app.infrastructure.adapters.notification_sender import NoOpNotificationSender
 from app.infrastructure.config.constants import ProcessSuffix
 from app.infrastructure.config.logging import configure_logging
 from app.infrastructure.config.settings import Settings, get_settings
@@ -54,6 +56,7 @@ class Container:
     session_maker: async_sessionmaker[AsyncSession]
     broker: RedisBroker
     publisher: BrokerEventPublisher
+    notifier: NotificationSender
     make_uow: Callable[[], OrderUnitOfWork]
     mapper: OrderMapper
     placements: OrderPlacementRepository
@@ -75,6 +78,7 @@ def build_container(settings: Settings | None = None) -> Container:
 
     broker = make_broker(resolved.broker_url)
     publisher = BrokerEventPublisher(broker, resolved.broker_events_channel)
+    notifier: NotificationSender = NoOpNotificationSender()
     placements = SqlOrderPlacementRepository(session_maker)
 
     return Container(
@@ -83,6 +87,7 @@ def build_container(settings: Settings | None = None) -> Container:
         session_maker=session_maker,
         broker=broker,
         publisher=publisher,
+        notifier=notifier,
         make_uow=make_uow_factory(session_maker, publisher),
         mapper=OrderMapper(),
         placements=placements,
@@ -109,7 +114,9 @@ def build_command_bus(container: Container) -> CommandBus[Command, OrderDTO]:
     bus: CommandBus[Command, OrderDTO] = CommandBus()
 
     def place_order(command: Command) -> Awaitable[OrderDTO]:
-        return PlaceOrderHandler(container.make_uow(), container.mapper)(_narrow(command, PlaceOrder))
+        return PlaceOrderHandler(container.make_uow(), container.mapper, container.notifier)(
+            _narrow(command, PlaceOrder)
+        )
 
     def mark_paid(command: Command) -> Awaitable[OrderDTO]:
         return MarkOrderPaidHandler(container.make_uow(), container.mapper)(_narrow(command, MarkOrderPaid))

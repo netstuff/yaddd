@@ -27,6 +27,7 @@ from app.domain.orders.aggregates.order import Order
 from app.domain.orders.constants import OrderStatus
 from app.domain.orders.events import OrderPaid, OrderPlaced
 from app.domain.orders.value_objects import CardToken, Money, OrderReference
+from app.infrastructure.adapters.notification_sender import NoOpNotificationSender
 from app.infrastructure.database.constants import OrderPlacementColumn
 from app.infrastructure.database.models import order_placements_table, orders_table
 from app.infrastructure.database.read_models import SqlOrderPlacementRepository
@@ -51,7 +52,7 @@ async def place_order(
         card_token=card_token,
     )
     async with make_uow() as uow:
-        return await PlaceOrderHandler(uow, OrderMapper())(command)
+        return await PlaceOrderHandler(uow, OrderMapper(), NoOpNotificationSender())(command)
 
 
 async def get_order(make_uow: Callable[[], OrderUnitOfWork], order_id: UUID) -> Order | None:

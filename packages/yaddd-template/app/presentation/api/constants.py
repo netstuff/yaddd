@@ -38,7 +38,7 @@ class ApiPath:
 class ApiTitle:
     """Metadata of the API document."""
 
-    VERSION = "0.1.0"
+    VERSION = "0.2.0"
     ORDERS_API_DESCRIPTION = "Orders API generated from a yaddd-domain skeleton."
     API_SUFFIX = " API"
 
