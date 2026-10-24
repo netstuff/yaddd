@@ -41,8 +41,14 @@ Dependencies point inwards. `domain` knows nothing; `application` depends on
   `INVARIANTS` and behavioural rules on the aggregate as `ClassVar` rule
   instances.
 - **`application/`** — commands, handlers (`@command_handler`), DTOs, mappers,
-  the unit-of-work port, projections, and the health vocabulary. Framework
-  free: it may import `yaddd`, never FastAPI or FastStream.
+  the unit-of-work port, projections, scenarios and the health vocabulary.
+  Framework free: it may import `yaddd`, never FastAPI or FastStream.
+- **Prefer handler shapes in this order.**
+  1. A plain `callable` for one-step, stateless business logic.
+  2. A `Scenario` subclass when the use case has multiple steps that share a
+     mutable `Context` and may branch or skip steps conditionally.
+  3. A `class` implementing `CommandHandler` only when the previous two shapes
+     do not fit; this should be rare.
 - **`infrastructure/`** — SQLAlchemy Core tables and adapters, Redis broker,
   publisher, probes, settings, logging. Implements ports; never invents new
   vocabulary for the domain.
