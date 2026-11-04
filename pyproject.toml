@@ -30,13 +30,13 @@ all = [
 members = ["packages/*", "packages/yaddd-linter"]
 # The template is a self-contained skeleton meant to be copied out of this repo,
 # so it resolves yaddd from PyPI instead of joining the workspace and its lock.
-exclude = ["packages/yaddd-template"]
+exclude = ["packages/yaddd-example"]
 
 [tool.ruff]
 line-length = 120
-# yaddd-template is a standalone project that only lives here for convenience:
+# yaddd-example is a standalone project that only lives here for convenience:
 # it brings its own tooling config and must not be linted by the library rules.
-extend-exclude = ["skills", "src_old", "dist", "packages/yaddd-template"]
+extend-exclude = ["skills", "src_old", "dist", "packages/yaddd-example"]
 
 [tool.ruff.lint]
 exclude = [
@@ -66,7 +66,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["application"]
+known-first-party = ["application", "yaddd", "yaddd_agents", "yaddd_linter", "yaddd_pydantic", "yaddd_sqlalchemy", "yaddd_utils"]
 lines-after-imports = 2
 
 [tool.ruff.lint.per-file-ignores]
@@ -75,7 +75,7 @@ lines-after-imports = 2
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests", "packages/yaddd-pydantic/tests", "packages/yaddd-linter/tests", "packages/yaddd-utils/tests"]
+testpaths = ["packages/yaddd/tests", "packages/yaddd-sqlalchemy/tests", "packages/yaddd-pydantic/tests", "packages/yaddd-linter/tests", "packages/yaddd-agents/tests", "packages/yaddd-utils/tests"]
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "-s -v -p no:warnings -m 'not with_db'"
 env_override_existing_values = 1
@@ -95,11 +95,12 @@ python-version = "3.12"
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
-include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src", "packages/yaddd-pydantic/src", "packages/yaddd-linter/src", "packages/yaddd-utils/src"]
+include = ["packages/yaddd/src", "packages/yaddd-sqlalchemy/src", "packages/yaddd-pydantic/src", "packages/yaddd-linter/src", "packages/yaddd-agents/src", "packages/yaddd-utils/src"]
 executionEnvironments = [
     { root = "packages/yaddd", extraPaths = ["src"] },
     { root = "packages/yaddd-sqlalchemy", extraPaths = ["src", "../yaddd/src"] },
     { root = "packages/yaddd-pydantic", extraPaths = ["src", "../yaddd/src"] },
+    { root = "packages/yaddd-agents", extraPaths = ["src"] },
     { root = "packages/yaddd-utils", extraPaths = ["src", "../yaddd/src"] },
 ]
 

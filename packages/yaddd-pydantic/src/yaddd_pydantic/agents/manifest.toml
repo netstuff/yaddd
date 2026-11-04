@@ -1,0 +1,14 @@
+schema = 1
+name = "yaddd-pydantic"
+version = "0.2.0"
+
+[[relaxes]]
+rule = "IMPORTS_DOMAIN"
+allow_add = ["pydantic", "yaddd_pydantic"]
+reason = "PydanticVO is the sanctioned value-object base, and pydantic.Field declares its constraints."
+when = { dependency = "yaddd-pydantic", specifier = ">=0.1" }
+
+[rules.PYDANTIC_VO]
+layer = "domain"
+kind = "guidance"
+doc = "rules/domain.md"

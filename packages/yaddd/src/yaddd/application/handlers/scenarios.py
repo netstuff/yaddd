@@ -417,6 +417,6 @@ class ScenarioRunner[State]:
             await flush()
 
     def _resolve(self, target: ScenarioTarget[State], context: Context[State]) -> Scenario[State]:
-        if callable(target):
-            return target(context)
-        return target
+        if isinstance(target, Scenario):
+            return cast(Scenario[State], target)
+        return target(context)

@@ -5,12 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 from yaddd_linter import __version__
 from yaddd_linter.checker import AggregateMutationChecker, LayerIsolationChecker, collect_aggregate_names
-from yaddd_linter.config import Config, load_config
+from yaddd_linter.config import Config, LayerPolicy, load_config
 from yaddd_linter.rules import ALL_CODES, Violation
 
 
@@ -82,13 +83,14 @@ def _load_sources(
 def _check_sources(
     sources: list[tuple[Path, str]],
     enabled_codes: frozenset[str],
+    layers: Mapping[str, LayerPolicy] | None = None,
 ) -> list[Violation]:
     """Run all rules against the given sources and filter by enabled codes."""
     files = [path for path, _ in sources]
     aggregates = collect_aggregate_names(files)
 
     rules = [
-        LayerIsolationChecker(),
+        LayerIsolationChecker(layers),
         AggregateMutationChecker(aggregates),
     ]
 
@@ -165,6 +167,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Path to pyproject.toml containing [tool.yaddd-linter].",
     )
     parser.add_argument(
+        "--layers-config",
+        type=Path,
+        default=None,
+        help="Path to .yaddd/layers.json with per-layer import policies.",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
@@ -176,12 +184,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("the following arguments are required: paths")
 
     try:
-        config = load_config(args.config)
+        config = load_config(args.config, args.layers_config)
         cli_select = _parse_codes(args.select)
         cli_ignore = _parse_codes(args.ignore)
         enabled_codes = _resolve_codes(cli_select, cli_ignore, config)
         sources = _load_sources(args.paths, args.stdin_filename)
-        violations = _check_sources(sources, enabled_codes)
+        violations = _check_sources(sources, enabled_codes, config.layers)
     except _CliError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

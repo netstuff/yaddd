@@ -1,0 +1,69 @@
+{
+  "generated_by": "yaddd-agents",
+  "layers": {
+    "application": {
+      "imports": [
+        "application",
+        "domain"
+      ],
+      "third_party": []
+    },
+    "domain": {
+      "imports": [
+        "domain"
+      ],
+      "third_party": [
+        "pydantic",
+        "yaddd_pydantic"
+      ]
+    },
+    "infrastructure": {
+      "imports": [
+        "application",
+        "domain",
+        "infrastructure"
+      ],
+      "third_party": [
+        "faststream",
+        "pydantic",
+        "pydantic_settings",
+        "redis",
+        "sqlalchemy",
+        "yaddd_sqlalchemy"
+      ]
+    },
+    "presentation": {
+      "imports": [
+        "application",
+        "domain",
+        "presentation"
+      ],
+      "third_party": [
+        "fastapi",
+        "faststream",
+        "pydantic",
+        "redis",
+        "starlette",
+        "uvicorn"
+      ]
+    },
+    "testing": {
+      "imports": [
+        "application",
+        "domain",
+        "infrastructure",
+        "presentation",
+        "testing"
+      ],
+      "third_party": [
+        "faststream",
+        "httpx",
+        "pydantic",
+        "pytest",
+        "sqlalchemy",
+        "yaddd_sqlalchemy"
+      ]
+    }
+  },
+  "schema": 1
+}

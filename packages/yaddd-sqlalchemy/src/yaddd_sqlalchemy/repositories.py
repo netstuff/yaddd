@@ -5,11 +5,12 @@ from typing import Any, ClassVar
 
 from sqlalchemy import Column, Table, delete, insert, select, update
 from sqlalchemy.engine import Row
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from yaddd.domain.entities import AggregateRoot, PrimaryKey
 from yaddd.domain.repositories import CrudRepository
-from yaddd.exceptions import EntityNotFoundError
-
+from yaddd.exceptions import ConflictError, EntityNotFoundError
 from yaddd_sqlalchemy.session import SqlTransaction
 
 
@@ -79,18 +80,27 @@ class SqlCrudRepository[T: AggregateRoot](CrudRepository[T], ABC):
         return [self.to_domain(row) for row in result.all()]
 
     async def create(self, instance: T) -> T:
-        await self._session.execute(insert(self.table).values(**self.to_row(instance)))
+        try:
+            await self._session.execute(insert(self.table).values(**self.to_row(instance)))
+        except IntegrityError as exc:
+            raise ConflictError(str(exc)) from exc
         return instance
 
     async def update(self, instance: T) -> T:
         if await self.get(instance.pk) is None:
             raise EntityNotFoundError(f"{type(instance).__name__}({instance.pk})")
         stmt = update(self.table).where(self._pk_column == instance.pk).values(**self.to_row(instance))
-        await self._session.execute(stmt)
+        try:
+            await self._session.execute(stmt)
+        except IntegrityError as exc:
+            raise ConflictError(str(exc)) from exc
         return instance
 
     async def delete(self, pk: PrimaryKey) -> None:
-        await self._session.execute(delete(self.table).where(self._pk_column == pk))
+        try:
+            await self._session.execute(delete(self.table).where(self._pk_column == pk))
+        except IntegrityError as exc:
+            raise ConflictError(str(exc)) from exc
 
 
 class SqlTransactionBoundRepository[T: AggregateRoot](SqlCrudRepository[T], ABC):

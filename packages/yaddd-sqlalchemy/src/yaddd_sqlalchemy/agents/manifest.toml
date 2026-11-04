@@ -1,0 +1,20 @@
+schema = 1
+name = "yaddd-sqlalchemy"
+version = "0.2.0"
+
+[[relaxes]]
+rule = "IMPORTS_INFRASTRUCTURE"
+allow_add = ["sqlalchemy", "yaddd_sqlalchemy"]
+reason = "SqlCrudRepository, SqlUnitOfWork and VOTypeDecorator implement persistence ports."
+when = { dependency = "yaddd-sqlalchemy", specifier = ">=0.1" }
+
+[[restricts]]
+rule = "IMPORTS_APPLICATION"
+deny_add = ["sqlalchemy", "yaddd_sqlalchemy"]
+reason = "Application stays persistence-agnostic; only infrastructure may know SQLAlchemy."
+when = { dependency = "yaddd-sqlalchemy" }
+
+[rules.SQLALCHEMY_PERSISTENCE]
+layer = "infrastructure"
+kind = "guidance"
+doc = "rules/infrastructure.md"

@@ -7,6 +7,7 @@ catch a single base without losing the ability to narrow down by layer.
 __all__ = [
     "ApplicationError",
     "BusinessRuleViolationError",
+    "ConflictError",
     "ConnectorError",
     "DomainError",
     "EntityNotFoundError",
@@ -60,6 +61,10 @@ class InfrastructureError(YadddError):
 
 class EntityNotFoundError(InfrastructureError):
     """A repository could not find the requested record."""
+
+
+class ConflictError(InfrastructureError):
+    """A write conflicts with existing state, for example a unique constraint."""
 
 
 class ConnectorError(InfrastructureError):

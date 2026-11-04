@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Self, cast
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
+
 from yaddd.domain.value_object import ValueObject
 
 

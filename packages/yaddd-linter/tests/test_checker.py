@@ -7,6 +7,7 @@ from yaddd_linter.checker import (
     LayerIsolationChecker,
     collect_aggregate_names,
 )
+from yaddd_linter.config import LayerPolicy
 
 
 def _tmp_file(tmp_path: Path, name: str, source: str) -> Path:
@@ -199,6 +200,90 @@ class TestLayerIsolationChecker:
 
         assert len(violations) == 1
         assert violations[0].code == "YDDD004"
+
+    def test_test_file_imports_project_package(self, tmp_path: Path) -> None:
+        _tmp_file(tmp_path, "app/domain/order.py", "class Order: ...\n")
+        path = _tmp_file(
+            tmp_path,
+            "tests/test_order.py",
+            "from app.domain.order import Order\n",
+        )
+
+        violations = LayerIsolationChecker().check(path, path.read_text())
+
+        assert violations == []
+
+    def test_typeshed_import_is_not_third_party(self, tmp_path: Path) -> None:
+        path = _tmp_file(
+            tmp_path,
+            "apps/orders/src/orders/application/service.py",
+            "from _typeshed import DataclassInstance\n",
+        )
+
+        violations = LayerIsolationChecker().check(path, path.read_text())
+
+        assert violations == []
+
+
+class TestLayerPolicy:
+    def test_application_third_party_denied_with_policy(self, tmp_path: Path) -> None:
+        path = _tmp_file(
+            tmp_path,
+            "apps/orders/src/orders/application/service.py",
+            "import sqlalchemy\n",
+        )
+        policy = {"application": LayerPolicy(imports=frozenset({"domain", "application"}))}
+
+        violations = LayerIsolationChecker(policy).check(path, path.read_text())
+
+        assert len(violations) == 1
+        assert violations[0].code == "YDDD004"
+
+    def test_domain_pydantic_allowed_with_policy(self, tmp_path: Path) -> None:
+        path = _tmp_file(
+            tmp_path,
+            "apps/orders/src/orders/domain/order.py",
+            "from pydantic import Field\n",
+        )
+        policy = {
+            "domain": LayerPolicy(
+                imports=frozenset({"domain"}),
+                third_party=frozenset({"pydantic"}),
+            )
+        }
+
+        violations = LayerIsolationChecker(policy).check(path, path.read_text())
+
+        assert violations == []
+
+    def test_infrastructure_sqlalchemy_allowed_with_policy(self, tmp_path: Path) -> None:
+        path = _tmp_file(
+            tmp_path,
+            "apps/orders/src/orders/infrastructure/db.py",
+            "import sqlalchemy\n",
+        )
+        policy = {
+            "infrastructure": LayerPolicy(
+                imports=frozenset({"domain", "application", "infrastructure"}),
+                third_party=frozenset({"sqlalchemy"}),
+            )
+        }
+
+        violations = LayerIsolationChecker(policy).check(path, path.read_text())
+
+        assert violations == []
+
+    def test_policy_imports_replace_legacy_layers(self, tmp_path: Path) -> None:
+        path = _tmp_file(
+            tmp_path,
+            "apps/orders/src/orders/domain/order.py",
+            "from orders.application.commands import CreateOrder\n",
+        )
+        policy = {"domain": LayerPolicy(imports=frozenset({"domain", "application"}))}
+
+        violations = LayerIsolationChecker(policy).check(path, path.read_text())
+
+        assert violations == []
 
 
 class TestAggregateMutationChecker:

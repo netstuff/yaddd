@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
-from yaddd import DomainEvent, InMemoryEventPublisher
+from yaddd import ConflictError, DomainEvent, InMemoryEventPublisher
 from yaddd_sqlalchemy import SqlSession, SqlTransaction, SqlTransactionBoundRepository, SqlUnitOfWork
 
 from conftest import Order, orders_table
@@ -124,3 +124,16 @@ async def test_commit_publishes_tracked_events(engine: AsyncEngine):
 
     assert len(events) == 1
     assert isinstance(events[0], OrderPlaced)
+
+
+async def test_duplicate_commit_raises_conflict(engine: AsyncEngine):
+    order_id = uuid4().hex
+
+    async with build_uow(engine) as uow:
+        await uow.repos.orders.create(Order(id=order_id, status="new", total=10))
+        await uow.commit()
+
+    with pytest.raises(ConflictError):
+        async with build_uow(engine) as uow:
+            await uow.repos.orders.create(Order(id=order_id, status="new", total=10))
+            await uow.commit()

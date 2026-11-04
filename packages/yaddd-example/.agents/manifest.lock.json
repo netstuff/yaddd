@@ -1,0 +1,37 @@
+{
+  "generator": {
+    "name": "yaddd-agents",
+    "version": "0.1.0"
+  },
+  "outputs": {
+    ".agents/rules/base/application.md": "6efd522d7fb84baff2bc8d1468cef678b5fd50371d843812417a577c7f3c7550",
+    ".agents/rules/base/domain.md": "f468858ee324afb6803e22cc1d02b0f5e2008d0e6442fbae873594421406ab20",
+    ".agents/rules/base/infrastructure.md": "e795888adeb1639364b23a88491326048546c60e0c602ffff8b26d654a9fcd42",
+    ".agents/rules/base/presentation.md": "9c64916961e9ff8f1a92109577e6aa351863dfd21c9c28db3758293c37835c8b",
+    ".agents/rules/base/testing.md": "18c8106822ec712bfa39c34b0bee49f6bc0dbfdaecd77f94d9b861341c9c27ad",
+    ".agents/rules/base/tooling.md": "7e493abf282f01a7669ac0060a9a0d4c4f707dbcfba4184d50887a9d5a47c702",
+    ".agents/rules/extensions/yaddd-pydantic/domain.md": "d424a7fc4dae383b0de176028d9f3b00a8a88862236a27d881bc9d4ad11ae15f",
+    ".agents/rules/extensions/yaddd-sqlalchemy/infrastructure.md": "ff47d7eb7ef5894b2a14ddc33c0aee8562feef2b865f98ec8b1725483cd5b3b8",
+    ".yaddd/layers.json": "a5f14ce1733b7bd6727c9c52a917b996e97fd529623c4f98dfb162188c99bad1",
+    "AGENTS.md": "cc4d42595a4cdb8145d26e4aa08ea3326157ed1d2a76fee1f15c35d71d149d21"
+  },
+  "packs": [
+    {
+      "manifest_sha256": "dcde36adf9e1bb264874bbb983e0f4555cc9be51128a437fe8a2ba0514d17a46",
+      "name": "base",
+      "version": "0.1.0"
+    },
+    {
+      "manifest_sha256": "21b4edb74f985d03ac1b2cd1f31a45129193800e15cc385717fb7b2916ac4444",
+      "name": "yaddd-pydantic",
+      "version": "0.2.0"
+    },
+    {
+      "manifest_sha256": "2456aa31cb6c4dcb58866b0bf851d268ccb396336b05dac46ca08448f3929926",
+      "name": "yaddd-sqlalchemy",
+      "version": "0.2.0"
+    }
+  ],
+  "project": "pyproject.toml",
+  "schema": 1
+}

@@ -1,0 +1,94 @@
+schema = 1
+name = "base"
+version = "0.1.0"
+core = "rules/core.md"
+
+[rules.IMPORTS_DOMAIN]
+layer = "domain"
+kind = "imports"
+doc = "rules/domain.md"
+allow_first_party = ["domain"]
+allow_third_party = []
+
+[rules.IMPORTS_APPLICATION]
+layer = "application"
+kind = "imports"
+doc = "rules/application.md"
+allow_first_party = ["domain", "application"]
+allow_third_party = []
+
+[rules.IMPORTS_INFRASTRUCTURE]
+layer = "infrastructure"
+kind = "imports"
+doc = "rules/infrastructure.md"
+allow_first_party = ["domain", "application", "infrastructure"]
+allow_third_party = []
+
+[rules.IMPORTS_PRESENTATION]
+layer = "presentation"
+kind = "imports"
+doc = "rules/presentation.md"
+allow_first_party = ["domain", "application", "presentation"]
+allow_third_party = []
+
+[rules.IMPORTS_TESTING]
+layer = "testing"
+kind = "imports"
+doc = "rules/testing.md"
+allow_first_party = ["domain", "application", "infrastructure", "presentation", "testing"]
+allow_third_party = []
+
+[rules.AGGREGATE_MUTATION]
+layer = "domain"
+kind = "behavior"
+doc = "rules/domain.md"
+
+[rules.AGGREGATE_LOCATION]
+layer = "domain"
+kind = "layout"
+doc = "rules/domain.md"
+
+[rules.RULE_NAMING]
+layer = "domain"
+kind = "naming"
+doc = "rules/domain.md"
+
+[rules.UOW_ONE_PER_OP]
+layer = "application"
+kind = "behavior"
+doc = "rules/application.md"
+
+[rules.EVENTS_AFTER_COMMIT]
+layer = "application"
+kind = "behavior"
+doc = "rules/application.md"
+
+[rules.VO_AT_EDGES]
+layer = "application"
+kind = "behavior"
+doc = "rules/application.md"
+
+[rules.NO_MAGIC_STRINGS]
+layer = "application"
+kind = "style"
+doc = "rules/application.md"
+
+[rules.TEST_LAYOUT]
+layer = "testing"
+kind = "layout"
+doc = "rules/testing.md"
+
+[rules.TEST_ASYNC_MODE]
+layer = "testing"
+kind = "behavior"
+doc = "rules/testing.md"
+
+[rules.TEST_CONTRACTS]
+layer = "testing"
+kind = "behavior"
+doc = "rules/testing.md"
+
+[rules.NO_INLINE_PRAGMAS]
+layer = "tooling"
+kind = "style"
+doc = "rules/tooling.md"

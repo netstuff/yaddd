@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 
 from sqlalchemy.engine import Dialect
 from sqlalchemy.types import TypeDecorator
+
 from yaddd.domain.value_object import ValueObject
 
 

@@ -1,0 +1,17 @@
+# Project-specific relaxations. Every entry needs a reason: it documents why
+# the base policy is too narrow for this application.
+
+[[relaxes]]
+rule = "IMPORTS_INFRASTRUCTURE"
+allow_add = ["faststream", "pydantic", "pydantic_settings", "redis"]
+reason = "Infrastructure adapters implement the broker, settings and serialization ports."
+
+[[relaxes]]
+rule = "IMPORTS_PRESENTATION"
+allow_add = ["fastapi", "faststream", "pydantic", "redis", "starlette", "uvicorn"]
+reason = "HTTP and worker edges are built on FastAPI, FastStream and their runtime dependencies."
+
+[[relaxes]]
+rule = "IMPORTS_TESTING"
+allow_add = ["faststream", "httpx", "pydantic", "pytest", "sqlalchemy", "yaddd_sqlalchemy"]
+reason = "Integration and contract tests exercise the real adapters and transports."

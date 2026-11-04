@@ -17,3 +17,21 @@ jobs:
         run: uv sync
       - name: Test with pytest
         run: uv run pytest
+
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install template dependencies
+        working-directory: packages/yaddd-example
+        run: uv sync --all-groups
+      - name: Install yaddd-linter
+        working-directory: packages/yaddd-example
+        run: uv pip install -e ../yaddd-linter
+      - name: Run the template quality gate
+        working-directory: packages/yaddd-example
+        run: PATH="$PWD/.venv/bin:$PATH" make check

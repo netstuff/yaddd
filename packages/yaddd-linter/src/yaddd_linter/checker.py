@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import ast
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 from yaddd_linter.aggregate import find_aggregate_classes, is_aggregate_classdef
+from yaddd_linter.config import LayerPolicy
 from yaddd_linter.layers import (
     ALLOWED_IMPORTS,
     UNKNOWN,
+    Layer,
     layer_from_module,
     layer_from_path,
     package_root_from_path,
@@ -30,7 +32,20 @@ _DOMAIN_ALLOWED_THIRD_PARTY: frozenset[str] = frozenset({"pydantic", "yaddd_pyda
 def _is_stdlib(module_name: str) -> bool:
     """Return True if the module is part of the Python standard library."""
     top = module_name.split(".")[0]
-    return top in _STDLIB_NAMES
+    return top in _STDLIB_NAMES or top == "_typeshed"
+
+
+def _is_test_first_party(path: Path, module_name: str) -> bool:
+    """Return True for project packages imported by a test file."""
+    parts = list(path.parts)
+    if "tests" not in parts:
+        return False
+    index = len(parts) - 1 - parts[::-1].index("tests")
+    root = Path(*parts[:index])
+    if not root.is_dir():
+        return False
+    top = module_name.split(".")[0]
+    return (root / top).is_dir()
 
 
 def _is_first_party(module_name: str, package_root: str | None = None) -> bool:
@@ -100,6 +115,9 @@ def _annotation_name(node: ast.expr | None) -> str | None:
 class LayerIsolationChecker(Rule):
     """Ensure dependency direction between architectural layers."""
 
+    def __init__(self, layers: Mapping[str, LayerPolicy] | None = None) -> None:
+        self._layers = layers or {}
+
     def check(self, path: Path, source: str) -> list[Violation]:
         violations: list[Violation] = []
         current_layer = layer_from_path(path)
@@ -126,7 +144,7 @@ class LayerIsolationChecker(Rule):
                     imported_layer = layer_from_module(node.module)
                     if imported_layer is UNKNOWN:
                         continue
-                    if imported_layer in ALLOWED_IMPORTS.get(current_layer, set()):
+                    if imported_layer.name in self._allowed_layer_names(current_layer):
                         continue
                     # Same-layer relative imports are allowed.
                     if imported_layer == current_layer:
@@ -150,7 +168,7 @@ class LayerIsolationChecker(Rule):
         path: Path,
         line: int,
         col: int,
-        current_layer: Any,
+        current_layer: Layer,
         module: str,
     ) -> list[Violation]:
         if module == "__future__" or _is_stdlib(module):
@@ -170,29 +188,24 @@ class LayerIsolationChecker(Rule):
                 )
             ]
 
-        # The domain layer may always use the serialization stack: its
-        # value-object bases are domain classes (see
-        # _DOMAIN_ALLOWED_THIRD_PARTY), so neither YDDD004 (third-party) nor
-        # YDDD003 (wrong layer) applies.
-        if current_layer.name == "domain" and module.split(".")[0] in _DOMAIN_ALLOWED_THIRD_PARTY:
-            return []
-
-        # YDDD004: domain layer must depend only on stdlib and first-party modules.
-        if current_layer.name == "domain" and not _is_first_party(module, package_root_from_path(path)):
+        package_root = package_root_from_path(path)
+        if not _is_first_party(module, package_root) and not _is_test_first_party(path, module):
+            if self._third_party_allowed(current_layer, module):
+                return []
             return [
                 Violation(
                     str(path),
                     line,
                     col,
                     "YDDD004",
-                    f"Domain layer imports third-party module: {module!r}",
+                    f"{str(current_layer).capitalize()} layer imports third-party module: {module!r}",
                 )
             ]
 
         imported_layer = layer_from_module(module)
         if imported_layer is UNKNOWN:
             return []
-        if imported_layer in ALLOWED_IMPORTS.get(current_layer, set()):
+        if imported_layer.name in self._allowed_layer_names(current_layer):
             return []
         return [
             Violation(
@@ -203,6 +216,22 @@ class LayerIsolationChecker(Rule):
                 f"{current_layer} layer imports from {imported_layer} layer: {module!r}",
             )
         ]
+
+    def _allowed_layer_names(self, current_layer: Layer) -> set[str]:
+        """Return allowed first-party layer names for the current layer."""
+        policy = self._layers.get(current_layer.name)
+        if policy is not None:
+            return set(policy.imports)
+        return {layer.name for layer in ALLOWED_IMPORTS.get(current_layer, set())}
+
+    def _third_party_allowed(self, current_layer: Layer, module: str) -> bool:
+        """Return True when a third-party import is allowed in the layer."""
+        policy = self._layers.get(current_layer.name)
+        if policy is not None:
+            return module.split(".")[0] in policy.third_party
+        if current_layer.name == "domain":
+            return module.split(".")[0] in _DOMAIN_ALLOWED_THIRD_PARTY
+        return True
 
 
 class AggregateMutationChecker(Rule):

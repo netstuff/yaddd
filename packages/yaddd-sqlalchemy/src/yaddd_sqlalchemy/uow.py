@@ -5,7 +5,6 @@ from typing import Self, TypeVar
 
 from yaddd.application.uow import UnitOfWork
 from yaddd.domain.entities import AggregateRoot
-
 from yaddd_sqlalchemy.session import SqlTransaction
 
 

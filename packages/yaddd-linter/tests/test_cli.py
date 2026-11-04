@@ -121,3 +121,48 @@ def test_cli_unknown_code_returns_error(capsys: pytest.CaptureFixture[str]) -> N
     assert exit_code == 2
     captured = capsys.readouterr()
     assert "Unknown yaddd-linter rule codes" in captured.err
+
+
+def test_cli_reads_layers_config_next_to_pyproject(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[project]\nname = 'demo'\nversion = '0.1.0'\n", encoding="utf-8")
+    layers_dir = tmp_path / ".yaddd"
+    layers_dir.mkdir()
+    (layers_dir / "layers.json").write_text(
+        textwrap.dedent(
+            """
+            {
+              "schema": 1,
+              "layers": {
+                "application": {"imports": ["domain", "application"], "third_party": []}
+              }
+            }
+            """
+        ),
+        encoding="utf-8",
+    )
+    path = tmp_path / "apps" / "orders" / "src" / "orders" / "application" / "service.py"
+    _write_file(path, "import sqlalchemy\n")
+
+    exit_code = main(["--config", str(pyproject), str(tmp_path)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "YDDD004" in captured.out
+
+
+def test_cli_layers_config_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[project]\nname = 'demo'\nversion = '0.1.0'\n", encoding="utf-8")
+    layers = tmp_path / "layers.json"
+    layers.write_text(
+        '{"schema": 1, "layers": {"domain": {"imports": ["domain"], "third_party": ["pydantic"]}}}',
+        encoding="utf-8",
+    )
+    path = tmp_path / "apps" / "orders" / "src" / "orders" / "domain" / "order.py"
+    _write_file(path, "from pydantic import Field\n")
+
+    exit_code = main(["--config", str(pyproject), "--layers-config", str(layers), str(tmp_path)])
+
+    assert exit_code == 0
+    assert capsys.readouterr().out == ""

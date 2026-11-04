@@ -71,6 +71,7 @@ from yaddd.domain import (
 from yaddd.exceptions import (
     ApplicationError,
     BusinessRuleViolationError,
+    ConflictError,
     ConnectorError,
     DomainError,
     EntityNotFoundError,
@@ -115,6 +116,7 @@ __all__ = [
     "Command",
     "CommandBus",
     "CommandHandler",
+    "ConflictError",
     "Connector",
     "Context",
     "MessageBus",

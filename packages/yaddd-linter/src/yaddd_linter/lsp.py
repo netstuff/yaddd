@@ -61,7 +61,7 @@ def check_document(uri: str, source: str, path: Path) -> list[Diagnostic]:
 
     aggregates = collect_aggregate_names([path])
     rules = [
-        LayerIsolationChecker(),
+        LayerIsolationChecker(config.layers),
         AggregateMutationChecker(aggregates),
     ]
 

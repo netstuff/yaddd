@@ -1,7 +1,10 @@
 """SQLAlchemy implementation of the application ``Session`` protocol."""
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from yaddd.application.session import Session
+from yaddd.exceptions import ConflictError
 from yaddd.infrastructure.transaction import BaseTransaction
 
 
@@ -28,9 +31,12 @@ class SqlSession(Session):
         await self._session.__aenter__()
 
     async def commit(self) -> None:
-        """Commit the current session."""
+        """Commit the current session, translating integrity failures."""
         if self._session is not None:
-            await self._session.commit()
+            try:
+                await self._session.commit()
+            except IntegrityError as exc:
+                raise ConflictError(str(exc)) from exc
 
     async def rollback(self) -> None:
         """Roll back the current session."""
